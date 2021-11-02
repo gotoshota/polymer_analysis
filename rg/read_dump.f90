@@ -16,7 +16,7 @@ module read_dump
     do i = 1, 5
         READ(16,'()')
     enddo
-    read(16, '(E22.16,1x,e22.16)') box_l
+    read(16, '(E22.15,1x,e22.15)') box_l
     REWIND(16)
     do i = 0, nframe
         do j = 1, skip

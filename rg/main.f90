@@ -2,21 +2,22 @@ Program distribution_of_r_of_gyration
     use prm_list
     use read_prm
     use read_dump
-
+    use calc_poscm
     implicit none
 
-    double precision r(3), s(3), rcm(3), s2, rg2, rg_ave
+    double precision s(3), s2, rg2, rg_ave
     double precision drg, normalize, dummy
     double precision,allocatable :: rg_save(:), p_rg(:)
     integer i, j, k
     integer drg_max, i_rg, i_peak
+    integer id_atom
     integer, allocatable :: i_p_rg(:)
 
     CALL  readprm()
     CALL  readdump()
 
     open(18,file='rg_time.xvg',status='replace')
-
+    CALL calcposcm()
     allocate(rg_save(nmol))
 
     rg_ave = 0.0d0
@@ -29,24 +30,11 @@ Program distribution_of_r_of_gyration
             rg_save(i) = 0.0d0 
         enddo
 
-        do i = 1, 9
-            read(17,'()')
-        enddo
-
         do j = 1, nmol
             s2= 0.0d0
-            rcm = 0.0d0
             do i = 1, natom
-                read(17,*)dummy,r(:)
-                rcm(:) = rcm(:) + r(:)
-            enddo
-            rcm(:) = rcm(:) / natom
-            do i = 1, natom
-                backspace(17)
-            enddo
-            do i = 1, natom
-                read(17,*)dummy,r(:)
-                s(:) = r(:) - rcm(:)
+                id_atom = (j-1)*natom + i
+                s(:) = pos(:, id_atom, k) - pos_cm(:, j, k)
                 s2 = s2 + dot_product(s,s)
             enddo
             s2 = s2 /dble(natom)
