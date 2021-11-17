@@ -12,7 +12,7 @@ program main
 
     CALL readprm()
     CALL readdump()
-    CALL calc_poscm()
+    CALL calcposcm()
     CALL calcinertiatensor()
     
     summation = 0.0d0

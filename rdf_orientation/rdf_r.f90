@@ -17,12 +17,12 @@ Program rdf_calc
     DOUBLE PRECISION dot_pro, theta, size_dot_pro
 
     !integer, allocatable :: i_rdf(:)
-    double precision, allocatable :: rdf_cm_cm(:), rdf_cm_mon(:)
+    double precision, allocatable :: rdf_cm_cm(:), rdf_cm_cm_theta(:)
 
     INTEGER, parameter :: num_calc_frame = 2000
     INTEGER, PARAMETER :: dtheta = 0.10d0
     double precision, parameter :: dr=0.020d0
-    double precision, parameter :: pi = acos(-1.0d0)
+    double precision, parameter :: pi = dacos(-1.0d0)
 
 ! #######################################################################
 
@@ -50,8 +50,10 @@ Program rdf_calc
     !! the number of bin of theta
 
     allocate(rdf_cm_cm(r_max))
+    allocate(rdf_cm_cm_theta(r_max))
 
     rdf_cm_cm       = 0.0d0
+    rdf_cm_cm_theta = 0.0d0
     !! Calculate distance and count particles
     if (nframe .eq. 1)then
         start = 1
@@ -81,12 +83,12 @@ Program rdf_calc
                             + inertia_tensor(2,2,j,i)* inertia_tensor(2,2,k,i) &
                             + inertia_tensor(3,3,j,i)* inertia_tensor(3,3,k,i)
 
-                    size_dot_pro = inertia_tensor(1,1,j,i)*inertia_tensor(1,1,j,i)&
+                    size_dot_pro = SQRT(inertia_tensor(1,1,j,i)*inertia_tensor(1,1,j,i)&
                                  +  inertia_tensor(2,2,j,i)*inertia_tensor(2,2,j,i)&
-                                 +  inertia_tensor(3,3,j,i)*inertia_tensor(3,3,j,i)
+                                 +  inertia_tensor(3,3,j,i)*inertia_tensor(3,3,j,i))
 
                     size_dot_pro = size_dot_pro * &
-                                 (inertia_tensor(1,1,k,i)*inertia_tensor(1,1,k,i)&
+                                 SQRT(inertia_tensor(1,1,k,i)*inertia_tensor(1,1,k,i)&
                                  +  inertia_tensor(2,2,k,i)*inertia_tensor(2,2,k,i)&
                                  +  inertia_tensor(3,3,k,i)*inertia_tensor(3,3,k,i))
 
@@ -96,7 +98,8 @@ Program rdf_calc
                         i_r = 1
                     endif 
                     if (i_r <= r_max) then
-                        rdf_cm_cm(i_r) = rdf_cm_cm(i_r) + theta
+                        rdf_cm_cm(i_r) = rdf_cm_cm(i_r) + 1 
+                        rdf_cm_cm_theta(i_r) = rdf_cm_cm_theta(i_r) + theta
                     endif
                 endif
             enddo
@@ -104,7 +107,8 @@ Program rdf_calc
     enddo
 
     rdf_cm_cm            = dble(rdf_cm_cm) / (nmol * num_calc_frame)
-    
+    rdf_cm_cm_theta      = dble(rdf_cm_cm_theta) / (nmol * num_calc_frame)
+   
     !! Ma chi ga i !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! orient
     !do i = start, nframe, skip_frame
@@ -165,6 +169,7 @@ Program rdf_calc
     do i = 1, r_max
         dv                  = (4.0d0 / 3.0d0)*pi* (dble(i) ** 3.0d0 - dble(i-1) ** 3.0d0) * dr **3.0d0
         rdf_cm_cm(i)              = rdf_cm_cm(i) / (dv * rho_cm_cm)
+        rdf_cm_cm_theta(i)              = rdf_cm_cm(i) / (dv * rho_cm_cm)
     enddo
     call system_clock(tend)
     t = real(tend - tbegin) / CountPerSec
@@ -173,7 +178,7 @@ Program rdf_calc
     write(16,'(A17,1X,F10.3,1X,A3)')'##elapsed time is',t,'sec'
     write(16,*)'## distance, rdf cm-cm, rdf cm-mon'
     do i = 1, r_max
-        write(16,'(F15.7,1X,F15.7,1X,F15.7,1X,F15.7)')(i-0.5d0)*dr,rdf_cm_cm(i)
+        write(16,'(F15.7,1X,F15.7,1X,F15.7,1X,F15.7)')(i-0.5d0)*dr,rdf_cm_cm(i), rdf_cm_cm_theta(i)
     enddo
     close(16)
 end Program rdf_calc
