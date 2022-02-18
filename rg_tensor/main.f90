@@ -18,11 +18,11 @@ program main
     summation = 0.0d0
     do i = 0, nframe
         do j = 1, nmol
-            summation = summation + SUM(inertia_eigenval(:,j,i)**2.0d0)
+            summation = summation + SUM(inertia_eigenval(:,j,i))
         enddo
     enddo
     print *, "# Rg is"
-    print *, summation/ nmol/ (nframe - 1)
+    print *, summation/ dble(nmol) / dble(nframe - 1)
     
 
 end program

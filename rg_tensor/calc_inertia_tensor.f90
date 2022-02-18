@@ -50,6 +50,7 @@ module calc_inertia_tensor
     do i = 1, nframe 
         do j = 1, nmol
             do k = 1, 3
+                eigenval(k) = 0.0d0
                 do l = 1,3
                     eigenvec(l, k) = inertia_tensor(l, k, j, i)
                 enddo
@@ -59,6 +60,9 @@ module calc_inertia_tensor
                 do l = 1,3
                     inertia_tensor(l, k, j, i) = eigenvec(l, k)
                 enddo
+            enddo
+            do k =1, 3
+                inertia_eigenval(k, j, i) = eigenval(k)
             enddo
         enddo
     enddo
