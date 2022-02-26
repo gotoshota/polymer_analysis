@@ -2,7 +2,6 @@ Program main
     use prm_list
     use read_prm
     use read_dump
-    use calc_poscm
     implicit none
 
     double precision ree(3), tmp, ree2, ree_ave
@@ -17,7 +16,6 @@ Program main
     CALL  readdump()
 
     open(18,file='ree_time.xvg',status='replace')
-    CALL calcposcm()
     allocate(ree_save(nmol))
 
     ree_ave = 0.0d0
@@ -33,7 +31,7 @@ Program main
         do j = 1, nmol
             tmp = 0.0d0
             id_atom = (j - 1) * natom
-            ree(:) = pos(:, id_atom + 1, k) - pos_cm(:, id_atom + natom, k)
+            ree(:) = pos(:, id_atom + 1, k) - pos(:, id_atom + natom, k)
             tmp = tmp + dot_product(ree,ree)
             tmp = tmp /dble(natom)
             ree2 = ree2 + tmp
