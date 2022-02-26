@@ -1,7 +1,7 @@
 #! /bin/bash
 
 FC='gfortran'
-#FC='ifort'
+FC='ifort'
 Target='main.exe'
 
 ${FC} -c prm_list.f90
