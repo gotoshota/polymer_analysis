@@ -33,13 +33,20 @@ program msdcalc
         enddo  
     enddo
     !inertia_tensor = ABS(inertia_tensor)
+    do i = 0, nframe
+        do j = 1, nmol
+            do l = 1, 3
+                inertia_tensor(:,l,j,i) = inertia_tensor(:,l,j,i) * inertia_eigenval(l,j,i)
+            enddo
+        enddo
+    enddo
     do i = 0 , npoint !何個目の点か（時刻差に相当）
         m=0
         do j = 0 , nframe - Targetframe(i) !基準時刻
             tmp = 0.0d0
             do k = 1 , nmol
                 do l = 1, 3
-                    tmp(l) = tmp(l) +
+                    tmp(l) = tmp(l) +&
                     + inertia_tensor(1,l,k,j) * inertia_tensor(1,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(2,l,k,j) * inertia_tensor(2,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(3,l,k,j) * inertia_tensor(3,l,k,j+TargetFrame(i))
@@ -57,10 +64,13 @@ program msdcalc
         enddo
         acf(4,i) = acf(4,i) / 3.0d0
     enddo
-    do i = 0, npoint
+    do i = 1, npoint
         do j = 1, 4
             acf (j, i) = acf (j, i) / acf (j, 0)
         enddo
+    enddo
+    do j = 1, 4
+        acf (j, 0) = acf (j, 0) / acf (j, 0)
     enddo
     call system_clock(tend)
     tcalc = real(tend - tbegin) / CountPerSec

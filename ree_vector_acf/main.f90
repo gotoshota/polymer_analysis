@@ -19,7 +19,7 @@ program main
     double precision, ALLOCATABLE :: ree(:,:,:)
     INTEGER id_atom
 
-    DOUBLE PRECISION, PARAMETER :: d_angle = 0.10d0
+    DOUBLE PRECISION, PARAMETER :: d_angle = 0.50d0
     DOUBLE PRECISION, PARAMETER :: pi = acos(-1.0d0)
 
 !#################################################################
@@ -67,9 +67,10 @@ program main
         enddo
         acf(i) = acf(i) / DBLE(m)
     enddo
-    do i = 0, npoint
+    do i = 1, npoint
         acf(i) = acf(i) / acf(0)
     enddo 
+    acf(0) = acf(0) / acf (0)
 
     !Calculate angle of R_ee and Major axis
     ALLOCATE(angle(nmol, 0:nframe))
@@ -134,7 +135,7 @@ program main
     open(16, file='angle_ree_majoraxis_distribution.xvg', status='replace')
     WRITE(16,*)'# angle, P(angle)  [0 < angle < 90]'
     do i = 0, n_angle
-        t = i * 90.0d0
+        t = i * d_angle
         WRITE(16,'(f7.4,2X,e20.13)')t,angle_distri(i)
     enddo
 
