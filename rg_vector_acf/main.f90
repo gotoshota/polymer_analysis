@@ -1,4 +1,4 @@
-program msdcalc
+program main
     use prm_list
     use read_prm
     use coarse_grain
@@ -92,4 +92,4 @@ program msdcalc
     close(17)
 
     deallocate(acf)
-end program msdcalc
+end program main
