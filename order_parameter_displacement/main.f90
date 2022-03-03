@@ -23,16 +23,16 @@ program main
 
     CALL calcposcm()
     !CALL calcinertiatensor()
-    DEALLOCATE(pos, pos_cm)
     ALLOCATE(order_para(nframe))
-    ALLOCATE(dpos(3,nmol,nframe)
+    ALLOCATE(dpos(3,nmol,nframe))
 
     !calculate dpos
     do i = 1, nframe
         do j = 1, nmol
-            dpos(:, j, i) = pos(:, j, i) - pos(:, j, i-1)
+            dpos(:, j, i) = pos_cm(:, j, i) - pos_cm(:, j, i-1)
         enddo
     enddo
+    DEALLOCATE(pos, pos_cm)
     
 
     normalize = nmol * (nmol - 1) / 2 
@@ -45,7 +45,7 @@ program main
                 + dpos(3, j, i) * dpos(3, k, i)
                 tmptmp = tmptmp / SQRT(DOT_PRODUCT(dpos(:,j,i),dpos(:,j,i))) &
                 / SQRT(DOT_PRODUCT(dpos(:,k,i),dpos(:,k,i)))
-                tmp = tmp + tmptmp
+                tmp = tmp + tmptmp * tmptmp
             enddo
         enddo
         tmp = tmp / DBLE(normalize)
@@ -62,16 +62,17 @@ program main
     
     !deallocate(inertia_tensor, inertia_eigenval)
 
-    open(15, file='order_parameter.xvg', status='replace')
+    open(15, file='order_parameter_dpos.xvg', status='replace')
 
-    write(15,*)'# average of order parameter for displacement of center of mass =', ave
+    write(15,*)'# average of order parameter for displacement of center of mass ='
+    write(15,*)'#', ave
     write(15,*)'# Time, order param (dispalcement_COM)'
     do i = 1 , nframe 
         t = i* dt * nfreq
         write (15,'(f20.3,2X,4(e40.30,2X))')t,order_para(i)
     enddo
     close(15)
-    open(17, file='log.order_param', status='replace')
+    open(17, file='log.order_param_dpos', status='replace')
     write (17,*)'read time is ',tread,'sec'
     write (17,*)'calclation time is ',tcalc,'sec'
     close(17)
