@@ -19,7 +19,7 @@ program main
     double precision, ALLOCATABLE :: ree(:,:,:)
     INTEGER id_atom
 
-    DOUBLE PRECISION, PARAMETER :: d_angle = 0.10d0
+    DOUBLE PRECISION, PARAMETER :: d_angle = 0.50d0
     DOUBLE PRECISION, PARAMETER :: pi = acos(-1.0d0)
 
 !#################################################################
@@ -67,9 +67,10 @@ program main
         enddo
         acf(i) = acf(i) / DBLE(m)
     enddo
-    do i = 0, npoint
+    do i = 1, npoint
         acf(i) = acf(i) / acf(0)
     enddo 
+    acf(0) = acf(0) / acf (0)
 
     !Calculate angle of R_ee and Major axis
     ALLOCATE(angle(nmol, 0:nframe))
@@ -106,13 +107,13 @@ program main
     !normalization
     ALLOCATE(angle_distri(0:n_angle))
     do i = 0, n_angle
-        angle_distri(i) = DBLE(i_angle_distri) / DBLE(nframe + 1) / DBLE(nmol)
+        angle_distri(i) = DBLE(i_angle_distri(i)) / DBLE(nframe + 1) / DBLE(nmol)
     enddo
     
     !check
     tmp = 0.0d0
     do i = 0, n_angle
-        tmp = tmp + angle_distri
+        tmp = tmp + angle_distri(i)
     enddo
     print *, 'check normalizetion', tmp
 
@@ -127,15 +128,15 @@ program main
     write(15,*)'# Time, acf'
     do i = 0 , npoint 
         t = Targetframe(i)* dt * nfreq
-        write (15,'(f20.3,2X,e20.15)')t,acf(i)
+        write (15,'(f20.3,2X,e20.13)')t,acf(i)
     enddo
     close(15)
     
     open(16, file='angle_ree_majoraxis_distribution.xvg', status='replace')
     WRITE(16,*)'# angle, P(angle)  [0 < angle < 90]'
     do i = 0, n_angle
-        t = i * 90.0d0
-        WRITE(16,'(f7.4,2X,e20.15)')t,angle_distri(i)
+        t = i * d_angle
+        WRITE(16,'(f7.4,2X,e20.13)')t,angle_distri(i)
     enddo
 
     open(17, file='log.rg_vecor_acf', status='replace')

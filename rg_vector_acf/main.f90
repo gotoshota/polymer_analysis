@@ -1,4 +1,4 @@
-program msdcalc
+program main
     use prm_list
     use read_prm
     use coarse_grain
@@ -8,7 +8,7 @@ program msdcalc
     
     implicit none
     double precision,allocatable :: acf(:,:)
-    DOUBLE PRECISION tmp(3)
+    DOUBLE PRECISION tmp(3), tmptmp
     double precision t, dummy, tread, tcalc
     integer h, i, j, k, l, m, n
     integer tbegin, tend, CountPerSec, CountMax
@@ -33,16 +33,28 @@ program msdcalc
         enddo  
     enddo
     !inertia_tensor = ABS(inertia_tensor)
+    do i = 0, nframe
+        !do j = 1, nmol
+        !    do l = 1, 3
+        !        inertia_tensor(:,l,j,i) = inertia_tensor(:,l,j,i) * inertia_eigenval(l,j,i)
+        !    enddo
+        !enddo
+    enddo
     do i = 0 , npoint !何個目の点か（時刻差に相当）
         m=0
         do j = 0 , nframe - Targetframe(i) !基準時刻
             tmp = 0.0d0
             do k = 1 , nmol
                 do l = 1, 3
+<<<<<<< HEAD
                     tmp(l) = tmp(l) &
+=======
+                    tmptmp = &
+>>>>>>> 2d326f1fcae8285c4a6c9eebe2c080b1c07d03ed
                     + inertia_tensor(1,l,k,j) * inertia_tensor(1,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(2,l,k,j) * inertia_tensor(2,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(3,l,k,j) * inertia_tensor(3,l,k,j+TargetFrame(i))
+                    tmp(l) = tmp(l) + tmptmp**2
                 enddo
             enddo
             do l = 1, 3
@@ -57,9 +69,18 @@ program msdcalc
         enddo
         acf(4,i) = acf(4,i) / 3.0d0
     enddo
-    do i = 0, npoint
+    do i = 1, npoint
         do j = 1, 4
             acf (j, i) = acf (j, i) / acf (j, 0)
+        enddo
+    enddo
+    do j = 1, 4
+        acf (j, 0) = acf (j, 0) / acf (j, 0)
+    enddo
+    ! Order parameter
+    do i = 1, npoint
+        do j =1, 4
+            acf(j,i) = 0.50d0 * (acf(j,i) * 3.0d0 - 1)
         enddo
     enddo
     call system_clock(tend)
@@ -82,4 +103,4 @@ program msdcalc
     close(17)
 
     deallocate(acf)
-end program msdcalc
+end program main

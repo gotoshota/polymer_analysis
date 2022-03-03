@@ -69,9 +69,7 @@ module coarse_grain
     print*,'Net number of points is ',npoint
     print*,'########################################################################'
     print*,''
-    print*,'check'
     
     deallocate(AllTargetFrame, DoubleFlag)
-    print*,'check'
     end subroutine 
 end module coarse_grain

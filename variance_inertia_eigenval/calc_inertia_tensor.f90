@@ -24,12 +24,12 @@ module calc_inertia_tensor
     integer :: info
     INTEGER(KIND=4) target_frame
 
-    ALLOCATE(inertia_tensor(3, 3, nmol, 0:nframe)) !! 1=x, 2=y, 3=z
-    ALLOCATE(inertia_eigenval(3,nmol, 0:nframe)) !! 1=x, 2=y, 3=z
+    ALLOCATE(inertia_tensor(3, 3, nmol, nframe)) !! 1=x, 2=y, 3=z
+    ALLOCATE(inertia_eigenval(3,nmol, nframe)) !! 1=x, 2=y, 3=z
     inertia_tensor(:,:,:,:) = 0.0d0
 
     !! calculate inertia ternsor
-    do i = 0, nframe
+    do i = 1, nframe
         do j = 1, nmol 
             do k = 1, natom 
                 id_atom = (j - 1) * natom + k
@@ -47,7 +47,7 @@ module calc_inertia_tensor
     enddo
 
     !! call LAPACK to diagonalize
-    do i = 0, nframe 
+    do i = 1, nframe 
         do j = 1, nmol
             do k = 1, 3
                 eigenval(k) = 0.0d0

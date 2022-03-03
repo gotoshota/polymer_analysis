@@ -6,7 +6,6 @@ Target='main.exe'
 
 ${FC} -c prm_list.f90
 ${FC} -c read_prm.f90
-${FC} -c coarse_grain.f90
 ${FC} -c read_dump.f90
 ${FC} -c calc_poscm.f90
 ${FC} -c calc_inertia_tensor.f90

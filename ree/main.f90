@@ -24,18 +24,12 @@ Program main
 
     do k = 0, nframe
         ree2 = 0.0d0
-        do i = 1, nmol
-            ree_save(i) = 0.0d0 
-        enddo
-
         do j = 1, nmol
-            tmp = 0.0d0
             id_atom = (j - 1) * natom
             ree(:) = pos(:, id_atom + 1, k) - pos(:, id_atom + natom, k)
-            tmp = tmp + dot_product(ree,ree)
-            tmp = tmp /dble(natom)
+            tmp = dot_product(ree,ree)
             ree2 = ree2 + tmp
-            ree_save(j) = SQRT(tmp)
+            !ree_save(j) = SQRT(tmp)
         enddo
         ree2 = ree2 / dble(nmol)
         write(18,'(F25.3,2X,F30.8,2X,F30.8)')dt * k * nfreq, ree2
@@ -60,7 +54,7 @@ Program main
     enddo
     close(18)
 
-    ree_ave = ree_ave / (nframe + 1)
+    ree_ave = ree_ave / dble(nframe + 1)
 
     OPEN(15, file='ree.txt', status = 'replace')
     write(15,'(A20,1X,F18.9)')'#average of rg =',ree_ave
@@ -82,5 +76,5 @@ Program main
     !print*,rg_ave
     !close(19)
     !close(20)
-    deallocate(ree_save,p_ree,i_p_ree)
+    deallocate(ree_save)
 end program main
