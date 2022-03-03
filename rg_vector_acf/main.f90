@@ -39,21 +39,21 @@ program msdcalc
             tmp = 0.0d0
             do k = 1 , nmol
                 do l = 1, 3
-                    tmp(l) = tmp(l) +
+                    tmp(l) = tmp(l) &
                     + inertia_tensor(1,l,k,j) * inertia_tensor(1,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(2,l,k,j) * inertia_tensor(2,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(3,l,k,j) * inertia_tensor(3,l,k,j+TargetFrame(i))
                 enddo
             enddo
             do l = 1, 3
-                tmp(l) = tmp(l) / nmol
+                tmp(l) = tmp(l) / DBLE(nmol)
                 acf(l,i)= acf(l,i) + tmp(l)
                 acf(4,i)= acf(4,i) + tmp(l)
             enddo
             m = m + 1
         enddo
         do l = 1, 4 
-            acf(l,i) = acf(l,i) / m !基準時刻jに対して平均化
+            acf(l,i) = acf(l,i) / DBLE(m) !基準時刻jに対して平均化
         enddo
         acf(4,i) = acf(4,i) / 3.0d0
     enddo
