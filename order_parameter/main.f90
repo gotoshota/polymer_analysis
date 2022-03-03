@@ -32,13 +32,7 @@ program main
             acf(i,j) = 0.0d0
         enddo  
     enddo
-    !inertia_tensor = ABS(inertia_tensor)
     do i = 0, nframe
-        !do j = 1, nmol
-        !    do l = 1, 3
-        !        inertia_tensor(:,l,j,i) = inertia_tensor(:,l,j,i) * inertia_eigenval(l,j,i)
-        !    enddo
-        !enddo
     enddo
     do i = 0 , npoint !何個目の点か（時刻差に相当）
         m=0
