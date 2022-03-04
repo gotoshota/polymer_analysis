@@ -95,13 +95,12 @@ program main
     tcalc = real(tend - tbegin) / CountPerSec
     
     deallocate(inertia_tensor, inertia_eigenval)
-    DEALLOCATE(work)
 
     open(15, file='order_parameter.xvg', status='replace')
 
     write(15,*)'# order param is:'
     do i = 1, 3 
-        write (15,*)order_para(i)
+        write (15,*)order_param(i)
     enddo
     close(15)
     open(17, file='log.order_param', status='replace')
@@ -111,7 +110,7 @@ program main
     
     print*, '# order param is:'
     do i = 1, 3 
-        print*, order_para(i)
+        print*, order_param(i)
     enddo
 
 

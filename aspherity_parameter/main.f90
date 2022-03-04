@@ -36,7 +36,9 @@ program main
         tmp = 0.0d0
         do j = 1, nmol
             do k = 1,3 
-                tmp(k) = tmp(k) + eigenval(l,j,i)*eigenval(l,j,k)
+                tmp(k) = tmp(k) + inertia_eigenval(k,j,i)*inertia_eigenval(k,j,i)
+                !tmp(k) = tmp(k) + inertia_eigenval(k,j,i)
+                print*, inertia_eigenval(k,j,i)
             enddo
         enddo
         do k = 1, 3
@@ -54,14 +56,13 @@ program main
     tcalc = real(tend - tbegin) / CountPerSec
     
     deallocate(inertia_tensor, inertia_eigenval)
-    DEALLOCATE(work)
 
-    open(15, file='AS.txt', status='replace')
+    open(15, file='aspherity_parameter.txt', status='replace')
 
     write(15,*)'# aspherity parameter is:'
     write (15,*)as
     close(15)
-    open(17, file='log.order_param', status='replace')
+    open(17, file='log.as_param', status='replace')
     write (17,*)'read time is ',tread,'sec'
     write (17,*)'calclation time is ',tcalc,'sec'
     close(17)
