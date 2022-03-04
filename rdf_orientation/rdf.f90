@@ -13,14 +13,13 @@ Program rdf_calc
     INTEGER id_atom, theta_max, i_theta
 
     double precision t, box_l, x_1, x_2, dummy, rho, box_half, dpos(3), distance, dv
-    DOUBLE PRECISION pos_cm_tmp(3), rho_cm_cm, rho_cm_mon
+    DOUBLE PRECISION pos_cm_tmp(3), rho_cm_cm
     DOUBLE PRECISION dot_pro, theta, size_dot_pro
 
-    integer, allocatable :: i_rdf(:,:)
-    double precision, allocatable :: rdf_cm_cm(:,:), rdf_cm_mon(:,:)
+    integer, allocatable :: i_rdf(:), i_rdf_dotpro(:), i_rdf_dotpro2(:)
+    double precision, allocatable :: rdf_cm(:), rdf_cm_dotpro(:), rdf_cm_dotpro2(:)
 
     INTEGER, parameter :: num_calc_frame = 2000
-    INTEGER, PARAMETER :: dtheta = 0.10d0
     double precision, parameter :: dr=0.020d0
     double precision, parameter :: pi = acos(-1.0d0)
 
@@ -42,20 +41,18 @@ Program rdf_calc
     box_l = x_2 * 10.0d0 ** j - x_1 * 10.0d0 ** i
     rho        = dble(nparticle) / box_l**3.0d0 !!Density
     rho_cm_cm  = dble(nmol) / box_l**3.0d0 
-    rho_cm_mon = dble(nparticle - natom) / box_l**3.0d0 
     box_half = box_l / 2.0d0
     r_max = ceiling(box_half / dr)
     !! end reading box_l
     
-    !! the number of bin of theta
-    theta_max = CEILING(pi / dtheta)
+    allocate(rdf_cm(r_max), rdf_cm_dotpro(r_max), rdf_cm_dotpro2(r_max))
+    allocate(i_rdf(r_max), i_rdf_dotpro(:), i_rdf_dotpro2(:))
 
-    allocate(rdf_cm_cm(r_max,theta_max), rdf_cm_mon(r_max,theta_max))
-    allocate(i_rdf(r_max,theta_max))
-
-    rdf_cm_cm       = 0.0d0
-    rdf_cm_mon      = 0.0d0
+    rdf_cm_         = 0.0d0
+    rdf_cm_2        = 0.0d0
     i_rdf           = 0 
+    i_rdf_dotpro    = 0 
+    i_rdf_dotpro2   = 0 
     !! Calculate distance and count particles
     if (nframe .eq. 1)then
         start = 1
@@ -81,91 +78,26 @@ Program rdf_calc
                     i_r = ceiling(distance / dr)
 
                     !! calculate theta
-                    dot_pro = inertia_tensor(1,1,j,i)* inertia_tensor(1,1,k,i) &
-                            + inertia_tensor(2,2,j,i)* inertia_tensor(2,2,k,i) &
+                    dot_pro = inertia_tensor(1,3,j,i)* inertia_tensor(1,3,k,i) &
+                            + inertia_tensor(2,3,j,i)* inertia_tensor(2,3,k,i) &
                             + inertia_tensor(3,3,j,i)* inertia_tensor(3,3,k,i)
-
-                    size_dot_pro = inertia_tensor(1,1,j,i)*inertia_tensor(1,1,j,i)
-                                 +  inertia_tensor(2,2,j,i)*inertia_tensor(2,2,j,i)
-                                 +  inertia_tensor(3,3,j,i)*inertia_tensor(3,3,j,i)
-
-                    size_dot_pro = size_dot_pro * 
-                                 (inertia_tensor(1,1,k,i)*inertia_tensor(1,1,k,i)
-                                 +  inertia_tensor(2,2,k,i)*inertia_tensor(2,2,k,i)
-                                 +  inertia_tensor(3,3,k,i)*inertia_tensor(3,3,k,i))
-
-                    theta = dot_pro / size_dot_pro
-                    theta = dacos(theta)
 
                     if (i_r .eq. 0)then
                         i_r = 1
                     endif 
                     if (i_r <= r_max) then
                         i_rdf(i_r) = i_rdf(i_r) + 1
+                        i_rdf_dotpro(i_r) = i_rdf_dotpro(i_r) + dot_pro
+                        i_rdf_dotpro2(i_r) = i_rdf_dotpro2(i_r) + 0.50d0*(3.0d0*dot_pro*dot_pro - 1.0d0)
                     endif
                 endif
             enddo
         enddo
     enddo
-
-    rdf_cm_cm            = dble(i_rdf) / (nmol * num_calc_frame)
+    rdf_cm            = dble(i_rdf) / (nmol * num_calc_frame)
+    rdf_cm_dotpro     = dble(i_rdf_dotpro) / (nmol * num_calc_frame)
+    rdf_cm_dotpro2    = dble(i_rdf_dotpro2) / (nmol * num_calc_frame)
     
-    !! Ma chi ga i !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! orient
-    !do i = start, nframe, skip_frame
-    !    do j = 1, nmol !!set j th particle on origin
-    !        do k = 1, nmol
-    !            if (j .ne. k) then
-    !                dot_pro = inertia_tensor(1,1,j,i)* inertia_tensor(1,1,k,i) &
-    !                        + inertia_tensor(2,2,j,i)* inertia_tensor(2,2,k,i) &
-    !                        + inertia_tensor(3,3,j,i)* inertia_tensor(3,3,k,i)
-
-    !                size_dot_pro = inertia_tensor(1,1,j,i)*inertia_tensor(1,1,j,i)
-    !                             +  inertia_tensor(2,2,j,i)*inertia_tensor(2,2,j,i)
-    !                             +  inertia_tensor(3,3,j,i)*inertia_tensor(3,3,j,i)
-
-    !                size_dot_pro = size_dot_pro * 
-    !                             (inertia_tensor(1,1,k,i)*inertia_tensor(1,1,k,i)
-    !                             +  inertia_tensor(2,2,k,i)*inertia_tensor(2,2,k,i)
-    !                             +  inertia_tensor(3,3,k,i)*inertia_tensor(3,3,k,i))
-
-    !                theta = dot_pro / size_dot_pro
-    !                theta = dacos(theta)
-
-    !                i_theta = ceiling(theta / dtheta)
-    !                if (i_theta <= theta_max) then
-    !                    i_rdf_orient(i_theta) = i_rdf_orient(i_theta) + 1
-    !                endif
-    !            endif
-    !        enddo
-    !    enddo
-    !enddo
-
-    !rdf_orient      = dble(i_rdf_orient) / (nmol * num_calc_frame)
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    !! cm_mon
-    !do i = start, nframe, skip_frame
-    !    do j = 1, nmol !!set j th particle on origin
-    !        do k = 1, nparticle
-    !            if (j .ne. k) then
-    !                dpos(:) = pos(:,k,i) - pos_cm(:,j,i)
-    !                dpos(:) = abs(dpos(:) - box_l * nint(dpos(:) / box_l))
-    !                distance = sqrt(dpos(1)**2.0d0 + dpos(2)**2.0d0 + dpos(3)**2.0d0)
-    !                i_r = ceiling(distance / dr)
-    !                if (i_r .eq. 0)then
-    !                    i_r = 1
-    !                endif 
-    !                if (i_r <= r_max) then
-    !                    i_rdf(i_r) = i_rdf(i_r) + 1
-    !                endif
-    !            endif
-    !        enddo
-    !    enddo
-    !enddo
-    !
-    !rdf_cm_mon           = dble(i_rdf) / ((nparticle-natom) * num_calc_frame)
-
     !! Caluculate RDF
     do i = 1, r_max
         dv                  = (4.0d0 / 3.0d0)*pi* (dble(i) ** 3.0d0 - dble(i-1) ** 3.0d0) * dr **3.0d0
@@ -179,7 +111,7 @@ Program rdf_calc
     write(16,'(A17,1X,F10.3,1X,A3)')'##elapsed time is',t,'sec'
     write(16,*)'## distance, rdf cm-cm, rdf cm-mon'
     do i = 1, r_max
-        write(16,'(F15.7,1X,F15.7,1X,F15.7,1X,F15.7)')(i-0.5d0)*dr,rdf_cm_cm(i)
+        write(16,'(F15.7,1X,F15.7,1X,F15.7,1X,F15.7)')(i-0.5d0)*dr,rdf_cm(i),rdf_cm_dotpro(i),rdf_cm_dotpro2(i)
     enddo
     close(16)
 end Program rdf_calc
