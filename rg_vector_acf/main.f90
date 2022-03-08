@@ -46,11 +46,7 @@ program main
             tmp = 0.0d0
             do k = 1 , nmol
                 do l = 1, 3
-<<<<<<< HEAD
-                    tmp(l) = tmp(l) &
-=======
                     tmptmp = &
->>>>>>> 2d326f1fcae8285c4a6c9eebe2c080b1c07d03ed
                     + inertia_tensor(1,l,k,j) * inertia_tensor(1,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(2,l,k,j) * inertia_tensor(2,l,k,j+TargetFrame(i)) &
                     + inertia_tensor(3,l,k,j) * inertia_tensor(3,l,k,j+TargetFrame(i))

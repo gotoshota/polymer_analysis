@@ -10,7 +10,6 @@ program main
     use calc_inertia_tensor
     
     implicit none
-    DOUBLE PRECISION, ALLOCATABLE :: inertia_tensor(:,:,:,:) !! output as eigenvector 
     DOUBLE PRECISION tmp(3), tmptmp
     DOUBLE PRECISION as
     DOUBLE PRECISION ave(3)
@@ -18,7 +17,6 @@ program main
     integer h, i, j, k, l, m, n
     integer tbegin, tend, CountPerSec, CountMax
     INTEGER normalize
-    
     
 !############################################################################
 
@@ -29,26 +27,30 @@ program main
     tread = real(tend - tbegin) / CountPerSec
 
     CALL calcposcm()
+    CALL calcinertiatensor()
+    DEALLOCATE(pos, pos_cm)
 
-    !! calculate inertia ternsor
-    ALLOCATE(inertia_tensor(3, 3, nmol, 0:nframe)) !! 1=x, 2=y, 3=z
+    ! calculate average eigenval 
+    ave=0.0d0
     do i = 0, nframe
-        do j = 1, nmol 
-            do k = 1, natom 
-                id_atom = (j - 1) * natom + k
-                do l = 1, 3 !xyz
-                    do m = 1, 3 !xyz
-                        inertia_tensor(m, l, j, i) = &
-                        inertia_tensor(m, l, j, i) + &
-                        (pos(m, id_atom, i) - pos_cm(m, j, i)) * &
-                        (pos(l, id_atom, i) - pos_cm(l, j, i))
-                    enddo
-                enddo
-            enddo 
-            inertia_tensor(:, :, j, i) = inertia_tensor(:, :, j, i) / DBLE(natom)
+        tmp = 0.0d0
+        do j = 1, nmol
+            do k = 1,3 
+                tmp(k) = tmp(k) + inertia_eigenval(k,j,i)*inertia_eigenval(k,j,i)
+                !tmp(k) = tmp(k) + inertia_eigenval(k,j,i)
+                print*, inertia_eigenval(k,j,i)
+            enddo
+        enddo
+        do k = 1, 3
+            ave(k) = ave(k) + tmp(k) / DBLE(nmol)
         enddo
     enddo
-    DEALLOCATE(pos, pos_cm)
+    do k = 1, 3
+        ave(k) = ave(k) / DBLE(nframe +1)
+    enddo
+    
+    ! calculate AS parameter
+    as = ave(3) - 0.50d0*(ave(1) + ave(2))
 
     call system_clock(tend)
     tcalc = real(tend - tbegin) / CountPerSec

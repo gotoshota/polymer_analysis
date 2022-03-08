@@ -19,8 +19,8 @@ Program rdf_calc
     integer, allocatable :: i_rdf(:), i_rdf_dotpro(:), i_rdf_dotpro2(:)
     double precision, allocatable :: rdf_cm(:), rdf_cm_dotpro(:), rdf_cm_dotpro2(:)
 
-    INTEGER, parameter :: num_calc_frame = 2000
-    double precision, parameter :: dr=0.020d0
+    INTEGER num_calc_frame
+    double precision, parameter :: dr=0.20d0
     double precision, parameter :: pi = acos(-1.0d0)
 
 ! #######################################################################
@@ -46,10 +46,11 @@ Program rdf_calc
     !! end reading box_l
     
     allocate(rdf_cm(r_max), rdf_cm_dotpro(r_max), rdf_cm_dotpro2(r_max))
-    allocate(i_rdf(r_max), i_rdf_dotpro(:), i_rdf_dotpro2(:))
+    allocate(i_rdf(r_max), i_rdf_dotpro(r_max), i_rdf_dotpro2(r_max))
 
-    rdf_cm_         = 0.0d0
-    rdf_cm_2        = 0.0d0
+    rdf_cm         = 0.0d0
+    rdf_cm_dotpro  = 0.0d0
+    rdf_cm_dotpro2 = 0.0d0
     i_rdf           = 0 
     i_rdf_dotpro    = 0 
     i_rdf_dotpro2   = 0 
@@ -59,8 +60,10 @@ Program rdf_calc
     else
         start = 0
     endif
+    num_calc_frame = 2000
     if (nframe .le. num_calc_frame) then
         skip_frame = 1
+        num_calc_frame = nframe
     else
         skip_frame = CEILING(DBLE(nframe) / DBLE(num_calc_frame))
     endif
@@ -77,7 +80,7 @@ Program rdf_calc
                     distance = dsqrt(dpos(1)**2.0d0 + dpos(2)**2.0d0 + dpos(3)**2.0d0)
                     i_r = ceiling(distance / dr)
 
-                    !! calculate theta
+                    !! calculate dot product
                     dot_pro = inertia_tensor(1,3,j,i)* inertia_tensor(1,3,k,i) &
                             + inertia_tensor(2,3,j,i)* inertia_tensor(2,3,k,i) &
                             + inertia_tensor(3,3,j,i)* inertia_tensor(3,3,k,i)
@@ -87,31 +90,31 @@ Program rdf_calc
                     endif 
                     if (i_r <= r_max) then
                         i_rdf(i_r) = i_rdf(i_r) + 1
-                        i_rdf_dotpro(i_r) = i_rdf_dotpro(i_r) + dot_pro
-                        i_rdf_dotpro2(i_r) = i_rdf_dotpro2(i_r) + 0.50d0*(3.0d0*dot_pro*dot_pro - 1.0d0)
+                        rdf_cm_dotpro(i_r) = rdf_cm_dotpro(i_r) + dot_pro
+                        rdf_cm_dotpro2(i_r) = rdf_cm_dotpro2(i_r) + 1.50d0 * dot_pro*dot_pro - 0.50d0
                     endif
                 endif
             enddo
         enddo
     enddo
-    rdf_cm            = dble(i_rdf) / (nmol * num_calc_frame)
-    rdf_cm_dotpro     = dble(i_rdf_dotpro) / (nmol * num_calc_frame)
-    rdf_cm_dotpro2    = dble(i_rdf_dotpro2) / (nmol * num_calc_frame)
-    
+    rdf_cm            = dble(i_rdf) / dble(nmol * num_calc_frame)
+    rdf_cm_dotpro     = dble(rdf_cm_dotpro) / dble(nmol * num_calc_frame)
+    rdf_cm_dotpro2    = dble(rdf_cm_dotpro2) / dble(nmol * num_calc_frame)
     !! Caluculate RDF
     do i = 1, r_max
         dv                  = (4.0d0 / 3.0d0)*pi* (dble(i) ** 3.0d0 - dble(i-1) ** 3.0d0) * dr **3.0d0
-        rdf_cm_cm(i)              = rdf_cm_cm(i) / (dv * rho_cm_cm)
-        rdf_orient(i)             = rdf_orient(i) / (dv * rho_cm_cm)
+        rdf_cm(i)           = rdf_cm(i) / (dv * rho_cm_cm)
+        rdf_cm_dotpro(i)    = rdf_cm_dotpro(i) / (dv * rho_cm_cm)
+        rdf_cm_dotpro2(i)   = rdf_cm_dotpro2(i) / (dv * rho_cm_cm)
     enddo
     call system_clock(tend)
     t = real(tend - tbegin) / CountPerSec
     
     open (16, file ='rdf_cm.xvg',status='replace')
     write(16,'(A17,1X,F10.3,1X,A3)')'##elapsed time is',t,'sec'
-    write(16,*)'## distance, rdf cm-cm, rdf cm-mon'
+    write(16,*)'## distance, rdf cm-cm, rdf cm-cm(P1), rdf cm-cm(P2)'
     do i = 1, r_max
-        write(16,'(F15.7,1X,F15.7,1X,F15.7,1X,F15.7)')(i-0.5d0)*dr,rdf_cm(i),rdf_cm_dotpro(i),rdf_cm_dotpro2(i)
+        write(16,'(F15.7,3(1x,E20.13))')(i-0.5d0)*dr,rdf_cm(i),rdf_cm_dotpro(i),rdf_cm_dotpro2(i)
     enddo
     close(16)
 end Program rdf_calc
