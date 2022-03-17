@@ -5,21 +5,22 @@ program main
     use read_prm
     use read_dump
     use calc_poscm
-    use calc_inertia_tensor
     
     implicit none
     DOUBLE PRECISION, ALLOCATABLE :: inertia_tensor(:,:,:,:) !! output as eigenvector 
     DOUBLE PRECISION, ALLOCATABLE :: inertia_tensor_hat(:,:,:,:) !! output as eigenvector 
     DOUBLE PRECISION, ALLOCATABLE :: inertia_tensor_hat_square(:,:,:,:) !! output as eigenvector 
-    DOUBLE PRECISION tmp(3), tmptmp, tmp_tensor
+    DOUBLE PRECISION tmp, tmptmp, tmp_tensor
     DOUBLE PRECISION ave(2)
     DOUBLE PRECISION mat(3,3)
     double precision t, dummy, tread, tcalc
     integer h, i, j, k, l, m, n
     integer tbegin, tend, CountPerSec, CountMax
     INTEGER normalize
+    INTEGER id_atom
     
-    DOUBLE PRECISION, ALLOCATABLE :: delta(:,:), sigma(:,:)
+    DOUBLE PRECISION, ALLOCATABLE :: delta(:,:)
+    DOUBLE PRECISION, ALLOCATABLE :: sigma(:,:)
     DOUBLE PRECISION trace, tracetrace
     DOUBLE PRECISION det
 
@@ -40,6 +41,8 @@ program main
     !! calculate inertia ternsor
     ALLOCATE(inertia_tensor(3, 3, nmol, 0:nframe)) !! 1=x, 2=y, 3=z
     ALLOCATE(inertia_tensor_hat(3, 3, nmol, 0:nframe)) !! 1=x, 2=y, 3=z
+    ALLOCATE(inertia_tensor_hat_square(3, 3, nmol, 0:nframe)) !! 1=x, 2=y, 3=z
+    inertia_tensor(:,:,:,:) = 0.0d0
     do i = 0, nframe
         do j = 1, nmol 
             do k = 1, natom 
@@ -74,11 +77,13 @@ program main
     do i = 0, nframe
         do j = 1, nmol
             mat(:,:) = inertia_tensor_hat(:,:,j,i)
-            inertia_tensor_hat_square(:,:,j,i) = MATMUL(mat,mat)
+            mat = MATMUL(mat,mat)
+            inertia_tensor_hat_square(:,:,j,i) = mat(:,:)
         enddo
     enddo
-    !! calculate delta
+    !! calculate delta and sigma
     ALLOCATE(delta(nmol,0:nframe))
+    ALLOCATE(sigma(nmol,0:nframe))
     do i = 0, nframe
         do j = 1, nmol
             !! delta
@@ -88,10 +93,10 @@ program main
             !! sigma
             mat = inertia_tensor_hat(:,:,j,i)
             CALL dsyev('V', 'U', 3, mat, 3, eigenval, work, lwork, info)
-            det = eigenval(1) + eigenval(2) + eigencal(3)
-            tmp = 2.0d0 / 3.0d0 *tracetrace
+            det = eigenval(1) * eigenval(2) * eigenval(3)
+            tmp = 1.50d0 *tracetrace
             tmp = tmp ** 1.50d0
-            sigma(j,i) = 4.0d0*det / tmp
+            sigma(j,i) = 4.0d0 * det / tmp
         enddo
     enddo
 
@@ -108,8 +113,6 @@ program main
     call system_clock(tend)
     tcalc = real(tend - tbegin) / CountPerSec
     
-    deallocate(inertia_tensor, inertia_eigenval)
-
     open(15, file='aspherity_parameter.txt', status='replace')
 
     write(15,*)'# aspherity parameter'
