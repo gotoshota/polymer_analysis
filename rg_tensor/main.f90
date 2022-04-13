@@ -23,6 +23,8 @@ program main
     enddo
     print *, "# Rg is"
     print *, summation/ dble(nmol) / dble(nframe - 1)
+
+    do i = 
     
 
 end program
