@@ -17,7 +17,7 @@ Program main
     double precision, parameter :: dr = 0.20d0
     double precision, parameter :: pi = acos(-1.0d0)
     double precision, parameter :: b2 = 3.0d0  !! bead-spring model
-    DOUBLE PRECISION, PARAMETER :: dtheta = 0.50d0
+    DOUBLE PRECISION, PARAMETER :: dtheta = 0.010d0
     double precision, allocatable :: vhf(:,:), vhf_self(:), vhf_nonself(:)
     
     call readprm()
@@ -48,11 +48,53 @@ Program main
     box_l = x_2 * 10.0d0 ** j - x_1 * 10.0d0 ** i
     box_half = box_l / 2.0d0
     rg_estimate = SQRT(b2 *natom/6)  
-    r_max = ceiling(rg_estimate*4 / dr)
+    r_max = ceiling(rg_estimate*10 / dr)
     !! end reading box_l
 
-    
-    theta_max = 90 / dtheta
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    !! Using angle between two molecular axis
+    !theta_max = 90 / dtheta
+    !allocate(vhf(r_max, theta_max))
+    !allocate(i_vhf(r_max, theta_max))
+    !vhf             = 0.0d0
+    !i_vhf           = 0 
+    !!! Calculate distance and count particles
+    !if (nframe .eq. 1)then
+    !    start = 1
+    !else
+    !    start = 0
+
+    !endif
+
+    !do i = start, nframe - delta_frame
+    !    do j = 1, nmol !!set j th particle on origin
+    !        !! Calculate displacement 
+    !        dpos(:) = pos_cm(:,j,i + delta_frame) - pos_cm(:,j,i)
+    !        distance = sqrt(dpos(1)**2.0d0 + dpos(2)**2.0d0 + dpos(3)**2.0d0)
+    !        i_r = ceiling(distance / dr)
+    !        if (i_r .eq. 0)then
+    !            i_r = 1
+    !        endif 
+
+    !        !! Calculate angle 
+    !        theta = inertia_tensor(1,1,j,i+delta_frame) * inertia_tensor(1,1,j,i) &
+    !              + inertia_tensor(2,1,j,i+delta_frame) * inertia_tensor(2,1,j,i) &
+    !              + inertia_tensor(3,1,j,i+delta_frame) * inertia_tensor(3,1,j,i)
+    !        theta = ACOS(theta) / pi * 180.0d0
+    !        if (theta .lt. 0 .or. theta .gt. 90) print *, 'Error: the value of theta'
+    !        i_theta = theta / dtheta
+
+    !        if (i_r <= r_max .and. i_theta <= theta_max) then
+    !            i_vhf(i_r,i_theta) = i_vhf(i_r,i_theta) + 1
+    !        else
+    !            print*,'Error: Missing particle (line 87) '
+    !        endif
+    !    enddo
+    !enddo
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+
+    !! Using order parameter
+    theta_max = CEILING(1.0d0 / dtheta)
     allocate(vhf(r_max, theta_max))
     allocate(i_vhf(r_max, theta_max))
     vhf             = 0.0d0
@@ -62,7 +104,7 @@ Program main
         start = 1
     else
         start = 0
-    endif
+    !Calculate order parameter
     do i = start, nframe - delta_frame
         do j = 1, nmol !!set j th particle on origin
             !! Calculate displacement 
@@ -77,8 +119,7 @@ Program main
             theta = inertia_tensor(1,1,j,i+delta_frame) * inertia_tensor(1,1,j,i) &
                   + inertia_tensor(2,1,j,i+delta_frame) * inertia_tensor(2,1,j,i) &
                   + inertia_tensor(3,1,j,i+delta_frame) * inertia_tensor(3,1,j,i)
-            theta = ACOS(theta) / pi * 180.0d0
-            if (theta .lt. 0 .or. theta .gt. 90) print *, 'Error: the value of theta'
+            theta = 1.50d0 *theta *theta - 0.50d0
             i_theta = theta / dtheta
 
             if (i_r <= r_max .and. i_theta <= theta_max) then
