@@ -7,7 +7,7 @@ Program ini_str
     print*,'Input Number of atoms'
     read*,n
 
-    open(17,file='ini_str.gro',status='replace')
+    open(17,file='single_chain.data',status='replace')
     write(17,'(A16,/)')'LAMMPS data file'
     write(17,'(I6,1X,A5)')n,'atoms'
     write(17,'(I6,1X,A5)')n,'bonds'
