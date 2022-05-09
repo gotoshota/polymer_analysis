@@ -104,6 +104,7 @@ Program main
         start = 1
     else
         start = 0
+    endif
     !Calculate order parameter
     do i = start, nframe - delta_frame
         do j = 1, nmol !!set j th particle on origin
