@@ -3,6 +3,7 @@ module coarse_grain
     public
     integer :: npoint = 0
     integer, allocatable ::TargetFrame(:)
+    DOUBLE PRECISION, ALLOCATABLE :: times(:)
 
 
     contains
@@ -77,6 +78,11 @@ module coarse_grain
     endif
 
     npoint = npoint - DoubleNumber !!Net point number
+    ALLOCATE(times(0:npoint))
+    do i = 0, npoint
+        times(i) = TargetFrame(i) *dt * nfreq
+    enddo
+    
     print*,''
     print*,'Coarse-grained parameter has defined.'
     print*,'Net number of points is ',npoint

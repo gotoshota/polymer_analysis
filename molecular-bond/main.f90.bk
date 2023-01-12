@@ -11,9 +11,8 @@ program main
     INTEGER(KIND=4)                 :: i, j, k, l
     INTEGER(KIND=4)                 :: ii
     INTEGER(KIND=4)                 :: id_particle
+    INTEGER(KIND=4)                 :: total_num_bond
 
-    INTEGER(KIND=4), ALLOCATABLE    :: i_normalize(:)
-    INTEGER(KIND=4), ALLOCATABLE    :: total_num_bond(:)
     INTEGER(KIND=4), ALLOCATABLE    :: num_bond(:,:)
     INTEGER(KIND=2), ALLOCATABLE    :: flag_bond(:,:,:)
 
@@ -28,13 +27,12 @@ program main
 
     DOUBLE PRECISION, ALLOCATABLE   :: rg2(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: p_num_bond(:)
-    DOUBLE PRECISION, ALLOCATABLE   :: cf_bond(:,:)
+    DOUBLE PRECISION, ALLOCATABLE   :: cf_bond(:)
 
     INTEGER(KIND=4), PARAMETER      :: outfile = 17
     CHARACTER(LEN=256)              :: outfilename
     CHARACTER(LEN=256)              :: command
     CHARACTER(LEN=256)              :: chara
-    CHARACTER(LEN=256)              :: chara_num_ol
 
     CALL readprm()
     CALL coarsegrain()
@@ -83,17 +81,13 @@ program main
 
     ! -- calculate the number of bonded molecules-- !
     ALLOCATE(num_bond(nmol, 0:nframe))
-    ALLOCATE(total_num_bond(0:nmol))
     ALLOCATE(flag_bond(nmol, nmol, 0:nframe))
-    ALLOCATE(cf_bond(1:npoint, 0:nmol))
+    ALLOCATE(cf_bond(1:npoint))
     ALLOCATE(p_num_bond(0:nmol))
-    ALLOCATE(i_normalize(nmol))
-
     command = "if [ ! -d CF ] ; then mkdir -p CF; fi"
     CALL system(command)
     command = "if [ ! -d PF ] ; then mkdir -p PF; fi"
     CALL system(command)
-
     ! -- the variable "ii" is the prefactor of r_overlap (i.e. bond length) -- !
     do ii = 1, 20
         prefactor = ii / 10.0d0
@@ -101,7 +95,6 @@ program main
         num_bond = 0
         flag_bond = 0
 
-        ! -- Determin overlapped (bonded)  or not --  !
         !$ omp do private(i,j,k,dpos,distance)
         do i = 0, nframe
             do j = 1, nmol
@@ -124,16 +117,13 @@ program main
         total_num_bond = 0
         do i = 0, nframe
             do j = 1, nmol
-                total_num_bond(j) = total_num_bond(j) + num_bond(j,i)
+                total_num_bond = total_num_bond + num_bond(j,i)
             end do
         end do
-        do i = 1, nmol
-            total_num_bond(0) = total_num_bond(0) + total_num_bond(i)
-        enddo
         !$ omp end single
 
 
-        ! -- calculate the probability density function of the number of overlapped polymers -- !
+        ! -- calculate the probability of the number of neighbor polymer -- !
         p_num_bond = 0.0d0
         !$ omp do private(j)
         do i = 0, nframe
@@ -159,63 +149,36 @@ program main
         CLOSE(outfile)
         !$ omp end single
 
-        ! -- calculate the correlation function of molecular bond -- !
+        ! -- calculate the life time of molecular bond -- !
         cf_bond = 0.0d0
-        i_normalize = 0
         !$ omp do private(j,k,l)
         do i = 1, npoint
             do j = 0, nframe - TargetFrame(i)
                 do k = 1, nmol 
                     do l = 1, nmol
-                        cf_bond(i,num_bond(k,j)) = cf_bond(i,num_bond(k,j)) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
-                        cf_bond(i,0) = cf_bond(i,0) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
-                        i_normalize(num_bond(k,j)) = i_normalize(num_bond(k,j)) + 1
+                        cf_bond(i) = cf_bond(i) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
                     end do
                 end do    
             end do
-            cf_bond(i,0) = cf_bond(i,0) / DBLE(nframe - TargetFrame(i) + 1)
-            do k = 1, nmol
-                cf_bond(i,k) = cf_bond(i,k) / DBLE(i_normalize(k) + 1)
-            enddo
+            cf_bond(i) = cf_bond(i) / DBLE(nframe - TargetFrame(i) + 1)
         end do
         !$ omp end do
 
         !$ omp single
         do i = 1, npoint
-            do j = 0, nmol
-                cf_bond(i,j) = cf_bond(i,j) / DBLE(total_num_bond(j)) * DBLE(i_normalize(j))
-            enddo 
+            cf_bond(i) = cf_bond(i) / DBLE(total_num_bond) * DBLE(nframe + 1)
         end do
 
         WRITE(chara, "(I3.3)") ii
-        command = "if [ ! -d CF/total ] ; then mkdir -p CF/total; fi"
-        CALL system(command)
-        outfilename = "CF/total/" // TRIM(ADJUSTL(chara))// ".txt"
+        outfilename = "CF/" // TRIM(ADJUSTL(chara))// ".txt"
         OPEN(outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# The difinision of bond length = ", bond_length
             WRITE(outfile, *) "# The radius of gyration sqrt(Rg^2) = ", SQRT(rg2_ave)
             WRITE(outfile, *) "# The ratio of bondlength and Rg = ", bond_length/SQRT(rg2_ave)
-            WRITE(outfile, *) "# This is correlation function totally averaged over the number of overlapped polymers."
             do i = 1, npoint
-                WRITE(outfile, "(F15.4, 1X, F15.7)") times(i), cf_bond(i,0)
+                WRITE(outfile, "(F15.4, 1X, F15.7)") TargetFrame(i)*nfreq*dt, cf_bond(i)
             end do
         CLOSE(outfile)
-
-        do j = 1, nmol
-            WRITE(chara_num_ol, "(I3.3)") j
-            command = "if [ ! -d CF/" // TRIM(ADJUSTL(chara_num_ol)) //  " ] ; then mkdir -p CF/" // TRIM(ADJUSTL(chara_num_ol)) // "; fi"
-            CALL system(command)
-            outfilename = "CF/"// TRIM(ADJUSTL(chara_num_ol)) // "/" // TRIM(ADJUSTL(chara))// ".txt"
-            OPEN(outfile, file=outfilename, status="replace", form="formatted")
-                WRITE(outfile, *) "# The difinision of bond length = ", bond_length
-                WRITE(outfile, *) "# The radius of gyration sqrt(Rg^2) = ", SQRT(rg2_ave)
-                WRITE(outfile, *) "# The ratio of bondlength and Rg = ", bond_length/SQRT(rg2_ave)
-                WRITE(outfile, *) "# This is correlation function of the polymers whose N_overlap = ",j
-                do i = 1, npoint
-                    WRITE(outfile, "(F15.4, 1X, F15.7)") times(i), cf_bond(i,j)
-                end do
-            CLOSE(outfile)
-        enddo
         !$ omp end single
     end do
     !$ omp end parallel
