@@ -25,6 +25,7 @@ program main
     DOUBLE PRECISION                :: distance
     DOUBLE PRECISION                :: prefactor
     DOUBLE PRECISION                :: summation
+    DOUBLE PRECISION                :: n_ave
 
     DOUBLE PRECISION, ALLOCATABLE   :: rg2(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: p_num_bond(:)
@@ -83,9 +84,9 @@ program main
 
     ! -- calculate the number of bonded molecules-- !
     ALLOCATE(num_bond(nmol, 0:nframe))
-    ALLOCATE(total_num_bond(0:nmol))
+    ALLOCATE(total_num_bond(0:nmol+1))
     ALLOCATE(flag_bond(nmol, nmol, 0:nframe))
-    ALLOCATE(cf_bond(1:npoint, 0:nmol))
+    ALLOCATE(cf_bond(1:npoint, 0:nmol+1))
     ALLOCATE(p_num_bond(0:nmol))
     ALLOCATE(i_normalize(nmol))
 
@@ -123,13 +124,12 @@ program main
         !$ omp single
         total_num_bond = 0
         do i = 0, nframe
-            do j = 1, nmol
-                total_num_bond(j) = total_num_bond(j) + num_bond(j,i)
+            do j = 1, nmol ! polymer index
+                total_num_bond(num_bond(j,i)) = total_num_bond(num_bond(j,i)) + num_bond(j,i)
+                total_num_bond(nmol+1) = total_num_bond(nmol+1) + num_bond(j,i)
             end do
         end do
-        do i = 1, nmol
-            total_num_bond(0) = total_num_bond(0) + total_num_bond(i)
-        enddo
+        n_ave = total_num_bond(nmol+1) / DBLE(nmol * (nframe+1))
         !$ omp end single
 
 
@@ -157,33 +157,46 @@ program main
                 WRITE(outfile, "(I4, 1X, F15.7)") i, p_num_bond(i)
             end do
         CLOSE(outfile)
+
+        command = "if [ ! -d PF/norm ] ; then mkdir -p PF/norm; fi"
+        CALL system(command)
+        outfilename = "PF/norm/" // TRIM(ADJUSTL(chara))// ".txt"
+        OPEN(outfile, file=outfilename, status="replace", form="formatted")
+        WRITE(outfile, *) "# N / N_ave, p(N) * N_ave"
+        WRITE(outfile, *) "# N_ave = ", n_ave
+            do i = 0, nmol
+                WRITE(outfile, "(I4, 1X, F15.7)") i/n_ave, p_num_bond(i)*n_ave
+            end do
+        CLOSE(outfile)
         !$ omp end single
 
         ! -- calculate the correlation function of molecular bond -- !
         cf_bond = 0.0d0
         i_normalize = 0
-        !$ omp do private(j,k,l)
         do i = 1, npoint
+            !$ omp do private(k,l)
             do j = 0, nframe - TargetFrame(i)
                 do k = 1, nmol 
                     do l = 1, nmol
                         cf_bond(i,num_bond(k,j)) = cf_bond(i,num_bond(k,j)) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
-                        cf_bond(i,0) = cf_bond(i,0) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
-                        i_normalize(num_bond(k,j)) = i_normalize(num_bond(k,j)) + 1
+                        cf_bond(i,nmol+1) = cf_bond(i,nmol+1) + flag_bond(l,k,j) * flag_bond(l,k,j+TargetFrame(i))
+                        !i_normalize(num_bond(k,j)) = i_normalize(num_bond(k,j)) + 1
                     end do
                 end do    
             end do
-            cf_bond(i,0) = cf_bond(i,0) / DBLE(nframe - TargetFrame(i) + 1)
-            do k = 1, nmol
-                cf_bond(i,k) = cf_bond(i,k) / DBLE(i_normalize(k) + 1)
-            enddo
+            !$ omp end do
+            !cf_bond(i,0) = cf_bond(i,0) / DBLE(nframe - TargetFrame(i) + 1)
+            !do k = 1, nmol
+            !    !cf_bond(i,k) = cf_bond(i,k) / DBLE(i_normalize(k) + 1)
+            !    cf_bond(i,k) = cf_bond(i,k) / DBLE(nframe - TargetFrame(i) + 1)
+            !enddo
         end do
-        !$ omp end do
 
         !$ omp single
         do i = 1, npoint
-            do j = 0, nmol
-                cf_bond(i,j) = cf_bond(i,j) / DBLE(total_num_bond(j)) * DBLE(i_normalize(j))
+            do j = 0, nmol+1
+                !cf_bond(i,j) = cf_bond(i,j) / DBLE(total_num_bond(j)) * DBLE(nframe - TargetFrame(i) + 1)
+                cf_bond(i,j) = cf_bond(i,j) / DBLE(total_num_bond(j))
             enddo 
         end do
 
@@ -197,7 +210,7 @@ program main
             WRITE(outfile, *) "# The ratio of bondlength and Rg = ", bond_length/SQRT(rg2_ave)
             WRITE(outfile, *) "# This is correlation function totally averaged over the number of overlapped polymers."
             do i = 1, npoint
-                WRITE(outfile, "(F15.4, 1X, F15.7)") times(i), cf_bond(i,0)
+                WRITE(outfile, "(F15.4, 1X, F15.7)") times(i), cf_bond(i,nmol+1)
             end do
         CLOSE(outfile)
 
