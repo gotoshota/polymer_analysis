@@ -52,8 +52,9 @@ program main
     CHARACTER(LEN=256)              :: outfilename
     CHARACTER(LEN=256)              :: command
     CHARACTER(LEN=256)              :: chara
-
     INTEGER(KIND=4)                 :: access
+
+    CHARACTER(LEN=256)              :: arg
 
 ! ------------------------------------------------------------------ !
 ! ------------------------------------------------------------------ !
@@ -66,17 +67,28 @@ program main
     ! -- number of density of polymer chain -- !
     density = DBLE(nmol) / (box_l**3.0d0)
 
-    if ( access( "rg2.txt", " " ) .eq. 0 ) then
+    ! -- Define Rg^2 -- !
+    if (iargc() > 0) then
+        print *, "Get the value of Rg^2 from the file whose path is of cmmand line argument"
+        CALL GET_COMMAND_ARGUMENT(NUMBER=1, VALUE=arg)
+        OPEN(10, file=arg, status="old")
+            READ(10, *) rg2_ave
+        CLOSE(10)
+
+    else if ( access( "rg2.txt", " " ) .eq. 0 ) then
+        print *, "Get the value of Rg^2 from output file rg2.txt"
         OPEN(10, file="rg2.txt", status="old")
             READ(10, *) rg2_ave
         CLOSE(10)
 
     else if ( access( "rg2_long.txt", " " ) .eq. 0 ) then
+        print *, "Get the value of Rg^2 from output file rg2_long.txt"
         OPEN(10, file="rg2_long.txt", status="old")
             READ(10, *) rg2_ave
         CLOSE(10)
 
     else
+        print *, "Calculate the value of Rg^2"
         ALLOCATE(rg2(nmol, 0:nframe))
 
         ! -- calculate Rg^2 -- !
