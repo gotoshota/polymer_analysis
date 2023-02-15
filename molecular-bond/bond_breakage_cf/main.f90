@@ -189,7 +189,11 @@ program main
         n_ave = total_num_bond(nmol+1) / DBLE(nmol * (nframe+1))
 
         ! -- calculate the probability density function of the number of overlapped polymers -- !
-        CALL CALC_PDF_NUM_OF_BOND(nframe, nmol, ii, n_ave, num_bond,  p_num_bond)
+        !dir_name = TRIM(ADJUSTL(chara1)) // "/PF"
+        !CALL MKDIR(dir_name)
+        !dir_name = TRIM(ADJUSTL(chara1)) // "/PF/norm"
+        !CALL MKDIR(dir_name)
+        CALL CALC_PDF_NUM_OF_BOND(nframe, nmol, ii, n_ave, num_bond,  p_num_bond, chara1)
 
         command = "touch BREAKAGE_LENGTH"
         CALL system(command)
@@ -313,13 +317,14 @@ program main
 
         end subroutine
 
-        subroutine CALC_PDF_NUM_OF_BOND(nframe, nmol, int_bond_prefactor, n_ave, num_bond, pdf)
+        subroutine CALC_PDF_NUM_OF_BOND(nframe, nmol, int_bond_prefactor, n_ave, num_bond, pdf, chara1)
             implicit none    
 
             INTEGER(KIND=4), INTENT(IN)                 :: nmol, nframe
             INTEGER(KIND=4), INTENT(IN)                 :: int_bond_prefactor
             DOUBLE PRECISION, INTENT(IN)                :: n_ave
             INTEGER, INTENT(IN)                         :: num_bond(1:, 0:)
+            CHARACTER(LEN=256), INTENT(IN)              :: chara1
 
             DOUBLE PRECISION, INTENT(OUT)               :: pdf(0:)
 
@@ -336,8 +341,8 @@ program main
             do i = 0, nmol
                 pdf(i) = pdf(i) / (nmol * (nframe + 1))
             end do
-            WRITE(chara, "(I3.3)") ii
-            outfilename = "PF/" // TRIM(ADJUSTL(chara))// ".txt"
+
+            outfilename = TRIM(ADJUSTL(chara1)) // "/probability_nb.txt"
             OPEN(outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# N_b, pdf(N_b)"
                 do i = 0, nmol
@@ -345,9 +350,8 @@ program main
                 end do
             CLOSE(outfile)
 
-            command = "if [ ! -d PF/norm ] ; then mkdir -p PF/norm; fi"
-            CALL system(command)
             outfilename = "PF/norm/" // TRIM(ADJUSTL(chara))// ".txt"
+            outfilename = TRIM(ADJUSTL(chara1)) // "/probability_nb_norm.txt"
             OPEN(outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# N / N_ave, p(N) * N_ave"
             WRITE(outfile, *) "# N_ave = ", n_ave
