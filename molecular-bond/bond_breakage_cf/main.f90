@@ -166,6 +166,7 @@ program main
 
         ! -- Calculate bond flag --  !
         CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, bond_length, flag_bond)
+        print *,"Calculated flag of bond." 
 
         ! -- Count up the number of bond of j-th particle -- !
         num_bond = 0
@@ -208,11 +209,15 @@ program main
             breakage_length = SQRT(rg2_ave) * breakage_prefactor
           
             ! -- Calculate bond flag --  !
-            CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, breakage_length, flag_bond)
+            CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, breakage_length, flag_breakage)
+            print *,"Calculated flag of breakage." 
 
             ! -- calculate bond-breakage number B_i and the number of the particle whose B_i = k -- !
             CALL CALC_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, flag_bond, flag_breakage, broken_bond)
+            print *,"Calculated broken bond." 
+
             CALL CALC_NUM_OF_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, broken_bond, num_broken_bond)
+            print *,"Calculated the number of broken bond." 
 
             ! -- fraction of the number of particle whose bond are broken in time window t -- !
             do i = 1, npoint ! -- lag time (second arg) -- !
