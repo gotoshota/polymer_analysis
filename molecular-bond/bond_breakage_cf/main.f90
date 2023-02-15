@@ -249,7 +249,7 @@ program main
             enddo
 
             ! -- output -- !
-            outfilename = dir_name_header // "cf_broken_bond.txt"
+            outfilename = dir_name_header // "/cf_broken_bond.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# time , TCF "
             do i = 1, npoint
@@ -258,7 +258,7 @@ program main
 
             CALL CALC_SUSCEPTIBILITY(box_l, nmol, nframe, npoint, TargetFrame, broken_bond, cf_broken_bond, susceptibility)
             ! -- output -- !
-            outfilename = dir_name_header // "susceptibility.txt"
+            outfilename = dir_name_header // "/susceptibility.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# time , susceptibility "
             do i = 1, npoint
