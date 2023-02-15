@@ -258,12 +258,12 @@ program main
             print *, "Calculated the total fraction of broken bond in time lag t"
 
             ! -- output -- !
-            outfilename = dir_name_header // "/cf_broken_bond.txt"
+            outfilename = TRIM(ADJUSTL(dir_name_header)) // "/cf_broken_bond.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
-            WRITE(outfile, *) "# time , TCF "
-            do i = 1, npoint
-                WRITE(outfile, 100) times(i), cf_broken_bond(i)
-            enddo
+                WRITE(outfile, *) "# time , TCF "
+                do i = 1, npoint
+                    WRITE(outfile, 100) times(i), cf_broken_bond(i)
+                enddo
             CLOSE(outfile)
             print *, "Output the total fraction of broken bond was completed."
 
@@ -271,7 +271,7 @@ program main
             print *, "Calculated the susceptibility"
 
             ! -- output -- !
-            outfilename = dir_name_header // "/susceptibility.txt"
+            outfilename = TRIM(ADJUSTL(dir_name_header)) // "/susceptibility.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# time , susceptibility "
             do i = 1, npoint
