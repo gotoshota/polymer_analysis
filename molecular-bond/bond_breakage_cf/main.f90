@@ -231,6 +231,7 @@ program main
                     summation = summation + frac_of_num_of_broken_bond(j,i)
                 enddo
             enddo
+            print *, "Calculated the fraction of broken bond in time lag t"
             ! -- output -- !
             dir_name = dir_name_header // "/frac_broken_bond"
             CALL MKDIR(dir_name)
@@ -242,6 +243,7 @@ program main
                 do i = 1, npoint
                     WRITE(outfile, 100) times(i), frac_of_num_of_broken_bond(j,i)
                 enddo
+                CLOSE(outfile)
             enddo
             
             ! -- time correlation function of bond breakage -- !
