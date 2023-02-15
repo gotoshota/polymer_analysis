@@ -195,7 +195,7 @@ program main
         !CALL MKDIR(dir_name)
         CALL CALC_PDF_NUM_OF_BOND(nframe, nmol, ii, n_ave, num_bond,  p_num_bond, chara1)
 
-        command = "touch BREAKAGE_LENGTH"
+        command = "touch " // TRIM(ADJUSTL(chara1)) // "/BREAKAGE_LENGTH"
         CALL system(command)
         do ii = iii, 20
             WRITE(chara2,"(I3.3)") ii
