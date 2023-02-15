@@ -245,6 +245,7 @@ program main
                 enddo
                 CLOSE(outfile)
             enddo
+            print *, "Output the fraction of broken bond was completed."
             
             ! -- time correlation function of bond breakage -- !
             cf_broken_bond = 0.0d0
@@ -254,6 +255,7 @@ program main
                 enddo
                 cf_broken_bond(i) = cf_broken_bond(i) * 0.50d0 * density
             enddo
+            print *, "Calculated the total fraction of broken bond in time lag t"
 
             ! -- output -- !
             outfilename = dir_name_header // "/cf_broken_bond.txt"
@@ -262,8 +264,12 @@ program main
             do i = 1, npoint
                 WRITE(outfile, 100) times(i), cf_broken_bond(i)
             enddo
+            CLOSE(outfile)
+            print *, "Output the total fraction of broken bond was completed."
 
             CALL CALC_SUSCEPTIBILITY(box_l, nmol, nframe, npoint, TargetFrame, broken_bond, cf_broken_bond, susceptibility)
+            print *, "Calculated the susceptibility"
+
             ! -- output -- !
             outfilename = dir_name_header // "/susceptibility.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
@@ -272,6 +278,7 @@ program main
                 WRITE(outfile, 100) times(i), susceptibility(i)
             enddo
             CLOSE(outfile)
+            print *, "Output the susceptibility was completed."
 
             t = 10.0d0**5
             CALL VIS_BOND_BREAKAGE(box_l, nmol, t, dt, nfreq, nframe, flag_bond, pos_cm)
