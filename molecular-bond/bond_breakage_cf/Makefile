@@ -1,4 +1,4 @@
-FC = gfortran
+FC = ifort
 
 .SUFFIXES : .f90 .F90
 
@@ -22,7 +22,7 @@ OBJ = prm_list.o \
 
 
 $(TARGET): $(OBJ)
-	$(FC) -fopenmp -o $@ $(OBJ) -L$(HOME)/local/xdrfile-1.1.4-gfortran -lxdrfile
+	$(FC) -qopenmp -o $@ $(OBJ) -L$(HOME)/local/xdrfile-1.1.4-gfortran -lxdrfile
 
 .f90.o:
 	$(FC) -c $<

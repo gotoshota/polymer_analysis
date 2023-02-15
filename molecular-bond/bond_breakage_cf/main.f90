@@ -156,7 +156,7 @@ program main
     CALL system(command)
     !$ omp do default(private) 
     do iii = 1, 20
-        WRITE(chara1,*) iii
+        WRITE(chara1,"(I3.3)") iii
         dir_name = chara1
         CALL MKDIR(dir_name)
 
@@ -194,7 +194,7 @@ program main
         command = "touch BREAKAGE_LENGTH"
         CALL system(command)
         do ii = iii, 20
-            WRITE(chara2,*) ii
+            WRITE(chara2,"(I3.3)") ii
             dir_name = TRIM(ADJUSTL(chara1)) // "/"  //  TRIM(ADJUSTL(chara2))
             CALL MKDIR(dir_name)
             dir_name_header = dir_name
