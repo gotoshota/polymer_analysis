@@ -231,7 +231,7 @@ program main
             CALL MKDIR(dir_name)
             do j = 0, nmol
                 WRITE(chara3, "(I3.3)") j
-                outfilename = TRIM(ADJUSTL(dir_name)) // "/" // TRIM(ADJUSTL(chara3)) // ".txt"
+                outfilename = TRIM(ADJUSTL(dir_name)) // "/frac_broken_bond/" // TRIM(ADJUSTL(chara3)) // ".txt"
                 OPEN (outfile, file=outfilename, status="replace", form="formatted")
                 WRITE(outfile, *) "# time , fraction of the particle with broken bond = ", j
                 do i = 1, npoint
