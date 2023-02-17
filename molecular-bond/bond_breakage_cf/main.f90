@@ -1,7 +1,6 @@
 ! -- This programs calculates Bond-brakage correlations.                  -- !
 ! -- Reffer the following paper,                                          -- !
 ! -- H. Shiba, T. Kawasaki, and A. Onuki, Phys. Rev. E 86, 041504 (2012). -- !
-
 program main
     !$ use omp_lib
     use prm_list
