@@ -166,7 +166,7 @@ program main
 
         ! -- Calculate bond flag --  !
         CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, bond_length, flag_bond)
-        print *,"Calculated flag of bond." 
+        !print *,"Calculated flag of bond." 
 
         ! -- Count up the number of bond of j-th particle -- !
         num_bond = 0
@@ -210,14 +210,14 @@ program main
           
             ! -- Calculate bond flag --  !
             CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, breakage_length, flag_breakage)
-            print *,"Calculated flag of breakage." 
+            !print *,"Calculated flag of breakage." 
 
             ! -- calculate bond-breakage number B_i and the number of the particle whose B_i = k -- !
             CALL CALC_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, flag_bond, flag_breakage, broken_bond)
-            print *,"Calculated broken bond." 
+            !print *,"Calculated broken bond." 
 
             CALL CALC_NUM_OF_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, broken_bond, num_broken_bond)
-            print *,"Calculated the number of broken bond." 
+            !print *,"Calculated the number of broken bond." 
 
             ! -- fraction of the number of particle whose bond are broken in time window t -- !
             do i = 1, npoint ! -- lag time (second arg) -- !
@@ -231,7 +231,7 @@ program main
                     summation = summation + frac_of_num_of_broken_bond(j,i)
                 enddo
             enddo
-            print *, "Calculated the fraction of broken bond in time lag t"
+            !print *, "Calculated the fraction of broken bond in time lag t"
             ! -- output -- !
             dir_name = dir_name_header // "/frac_broken_bond"
             CALL MKDIR(dir_name)
@@ -245,7 +245,7 @@ program main
                 enddo
                 CLOSE(outfile)
             enddo
-            print *, "Output the fraction of broken bond was completed."
+            !print *, "Output the fraction of broken bond was completed."
             
             ! -- time correlation function of bond breakage -- !
             cf_broken_bond = 0.0d0
@@ -255,7 +255,7 @@ program main
                 enddo
                 cf_broken_bond(i) = cf_broken_bond(i) * 0.50d0 * density
             enddo
-            print *, "Calculated the total fraction of broken bond in time lag t"
+            !print *, "Calculated the total fraction of broken bond in time lag t"
 
             ! -- output -- !
             outfilename = TRIM(ADJUSTL(dir_name_header)) // "/cf_broken_bond.txt"
@@ -265,10 +265,10 @@ program main
                     WRITE(outfile, 100) times(i), cf_broken_bond(i)
                 enddo
             CLOSE(outfile)
-            print *, "Output the total fraction of broken bond was completed."
+            !print *, "Output the total fraction of broken bond was completed."
 
             CALL CALC_SUSCEPTIBILITY(box_l, nmol, nframe, npoint, TargetFrame, broken_bond, cf_broken_bond, susceptibility)
-            print *, "Calculated the susceptibility"
+            !print *, "Calculated the susceptibility"
 
             ! -- output -- !
             outfilename = TRIM(ADJUSTL(dir_name_header)) // "/susceptibility.txt"
@@ -278,7 +278,7 @@ program main
                 WRITE(outfile, 100) times(i), susceptibility(i)
             enddo
             CLOSE(outfile)
-            print *, "Output the susceptibility was completed."
+            !print *, "Output the susceptibility was completed."
 
             t = 10.0d0**5
             CALL VIS_BOND_BREAKAGE(box_l, nmol, t, dt, nfreq, nframe, flag_bond, pos_cm)
