@@ -72,7 +72,7 @@ program main
 
     ! -- Define Rg^2 -- !
     if (iargc() > 0) then
-        print *, "Get the value of Rg^2 from the file whose path is of cmmand line argument"
+        print *, "Get the value of Rg^2 from the file whose path is of cmmand line argument -> ", arg
         CALL GET_COMMAND_ARGUMENT(NUMBER=1, VALUE=arg)
         OPEN(10, file=arg, status="old")
             READ(10, *) rg2_ave
