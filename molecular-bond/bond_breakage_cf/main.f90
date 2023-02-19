@@ -154,7 +154,7 @@ program main
     command = "touch BOND_LENGTH"
     CALL system(command)
     !$ omp do default(private) 
-    do iii = 1, 20
+    do iii = 10, 10
         WRITE(chara1,"(I3.3)") iii
         dir_name = chara1
         CALL MKDIR(dir_name)
@@ -197,7 +197,7 @@ program main
 
         command = "touch " // TRIM(ADJUSTL(chara1)) // "/BREAKAGE_LENGTH"
         CALL system(command)
-        do ii = iii, 20
+        do ii = 12, 12
             WRITE(chara2,"(I3.3)") ii
             dir_name = TRIM(ADJUSTL(chara1)) // "/"  //  TRIM(ADJUSTL(chara2))
             CALL MKDIR(dir_name)
@@ -229,6 +229,7 @@ program main
                 do j = 0, nmol
                     summation = summation + frac_of_num_of_broken_bond(j,i)
                 enddo
+                print *, i, summation
             enddo
             !print *, "Calculated the fraction of broken bond in time lag t"
             ! -- output -- !
