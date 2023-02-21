@@ -289,7 +289,7 @@ program main
 
             DOUBLE PRECISION                            :: dpos(3)
             DOUBLE PRECISION                            :: distance
-            DOUBLE PRECISION                            :: bond_prefactor
+            DOUBLE PRECISION                            :: bond_length
 
             flag = 0
             do i = 0, nframe
