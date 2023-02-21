@@ -97,7 +97,7 @@ program main
     do i = 0, nframe
         tmp = 0.0d0
         do j = 1, nmol
-            tmp = tmp + rg2(j,i)
+            tmp = tmp + rg(j,i)
         end do
         tmp = tmp * normalize
         rg2_ave = rg2_ave + tmp
@@ -352,7 +352,7 @@ program main
             outfilename = TRIM(ADJUSTL(chara1)) // "/probability_nb_norm.txt"
             OPEN(outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# N / N_ave, p(N) * N_ave"
-            WRITE(outfile, *) "# N_ave = ", n_ave
+            WRITE(outfile, *) "# N_ave = ", n_av
                 do i = 0, nmol
                     WRITE(outfile, "(F15.7, 1X, F15.7)") DBLE(i)/DBLE(n_ave), pdf(i)*n_ave
                 end do
@@ -404,6 +404,7 @@ program main
                     enddo
                 enddo
             enddo
+
         end subroutine
 
         ! -- calculate the susceptibility of overall degree of the bond-breakage -- !
