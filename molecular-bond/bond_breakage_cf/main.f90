@@ -42,7 +42,7 @@ program main
     DOUBLE PRECISION                :: density
     DOUBLE PRECISION                :: t
 
-    DOUBLE PRECISION, ALLOCATABLE   :: rg2(:,:)
+    DOUBLE PRECISION, ALLOCATABLE   :: rg(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: p_num_bond(:)
     DOUBLE PRECISION, ALLOCATABLE   :: p_time_of_state(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: ave_time_of_state(:)
@@ -70,69 +70,52 @@ program main
     ! -- number of density of polymer chain -- !
     density = DBLE(nmol) / (box_l**3.0d0)
 
-    ! -- Define Rg^2 -- !
-    if (iargc() > 0) then
-        print *, "Get the value of Rg^2 from the file whose path is of cmmand line argument -> ", arg
-        CALL GET_COMMAND_ARGUMENT(NUMBER=1, VALUE=arg)
-        OPEN(10, file=arg, status="old")
-            READ(10, *) rg2_ave
-        CLOSE(10)
-
-    else if ( access( "rg2.txt", " " ) .eq. 0 ) then
-        print *, "Get the value of Rg^2 from output file rg2.txt"
-        OPEN(10, file="rg2.txt", status="old")
-            READ(10, *) rg2_ave
-        CLOSE(10)
-
-    else if ( access( "rg2_long.txt", " " ) .eq. 0 ) then
-        print *, "Get the value of Rg^2 from output file rg2_long.txt"
-        OPEN(10, file="rg2_long.txt", status="old")
-            READ(10, *) rg2_ave
-        CLOSE(10)
-
-    else
-        print *, "Calculate the value of Rg^2"
-        ALLOCATE(rg2(nmol, 0:nframe))
-
-        ! -- calculate Rg^2 -- !
-        rg2 = 0.0d0
-        normalize = 1/DBLE(natom)
-        !$ omp palallel
-        !$ omp do private (j,k,id_particle)
-        do i = 0, nframe
-            do j = 1, nmol
-                do k = 1, natom
-                    id_particle = (j-1)*natom + k
-                    rg2(j,i) = rg2(j,i) + (pos(1, id_particle, i) - pos_cm(1, j, i))*(pos(1, id_particle, i) - pos_cm(1, j, i)) &
-                    + (pos(2, id_particle, i) - pos_cm(2, j, i))*(pos(2, id_particle, i) - pos_cm(2, j, i)) &
-                    + (pos(3, id_particle, i) - pos_cm(3, j, i))*(pos(3, id_particle, i) - pos_cm(3, j, i)) 
-                end do
-                rg2(j,i) = rg2(j,i) * normalize
+    ! -- Calculate Rg(i,t) -- !
+    ALLOCATE(rg(nmol, 0:nframe))
+    rg = 0.0d0
+    normalize = 1/DBLE(natom)
+    !$ omp palallel
+    !$ omp do private (j,k,id_particle)
+    do i = 0, nframe
+        do j = 1, nmol
+            do k = 1, natom
+                id_particle = (j-1)*natom + k
+                rg(j,i) = rg(j,i) + (pos(1, id_particle, i) - pos_cm(1, j, i))*(pos(1, id_particle, i) - pos_cm(1, j, i)) &
+                + (pos(2, id_particle, i) - pos_cm(2, j, i))*(pos(2, id_particle, i) - pos_cm(2, j, i)) &
+                + (pos(3, id_particle, i) - pos_cm(3, j, i))*(pos(3, id_particle, i) - pos_cm(3, j, i)) 
             end do
+            rg(j,i) = rg(j,i) * normalize
         end do
-        !$ omp end do
-        DEALLOCATE(pos)
+    end do
+    !$ omp end do
+    DEALLOCATE(pos)
 
-        ! -- calculate the average of Rg^2 -- !
-        !$ omp single 
-        normalize = 1 / DBLE(nmol)
-        rg2_ave = 0.0d0
-        do i = 0, nframe
-            tmp = 0.0d0
-            do j = 1, nmol
-                tmp = tmp + rg2(j,i)
-            end do
-            tmp = tmp * normalize
-            rg2_ave = rg2_ave + tmp
+    ! -- calculate the average of Rg^2 -- !
+    !$ omp single 
+    normalize = 1 / DBLE(nmol)
+    rg2_ave = 0.0d0
+    do i = 0, nframe
+        tmp = 0.0d0
+        do j = 1, nmol
+            tmp = tmp + rg2(j,i)
         end do
-        rg2_ave = rg2_ave / DBLE(nframe + 1)
-        outfilename = "rg2.txt"
-        OPEN(outfile, file=outfilename, status="replace", form="formatted")
-            WRITE(outfile,*) rg2_ave
-        CLOSE(outfile)
-        DEALLOCATE(rg2)
-        !$ omp end single
-    end if
+        tmp = tmp * normalize
+        rg2_ave = rg2_ave + tmp
+    end do
+    rg2_ave = rg2_ave / DBLE(nframe + 1)
+    outfilename = "rg2.txt"
+    OPEN(outfile, file=outfilename, status="replace", form="formatted")
+        WRITE(outfile,*) rg2_ave
+    CLOSE(outfile)
+    !$ omp end single
+
+    ! -- calculate rg2 to rg -- !
+    !$ omp do private(i, j )
+    do i = 0, nframe
+        do j = 1, nmol
+            rg(j, i) = SQRT(rg(j, i))
+        enddo
+    enddo
 
     ! -- calculate the number of bonded molecules-- !
     ALLOCATE(num_bond(nmol, 0:nframe))
@@ -159,12 +142,12 @@ program main
         dir_name = chara1
         CALL MKDIR(dir_name)
 
-        ! -- Define bond length -- !
+        ! -- Define parameter of bond length -- !
         bond_prefactor = DBLE(iii) * 0.10d0
-        bond_length = SQRT(rg2_ave) * bond_prefactor
+        !bond_length = SQRT(rg2_ave) * bond_prefactor
 
         ! -- Calculate bond flag --  !
-        CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, bond_length, flag_bond)
+        CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, rg, bond_prefactor, flag_bond)
         !print *,"Calculated flag of bond." 
 
         ! -- Count up the number of bond of j-th particle -- !
@@ -205,10 +188,10 @@ program main
 
             ! -- Define bond-breakage length -- !
             breakage_prefactor = DBLE(ii) * 0.10d0
-            breakage_length = SQRT(rg2_ave) * breakage_prefactor
+            !breakage_length = SQRT(rg2_ave) * breakage_prefactor
           
             ! -- Calculate bond flag --  !
-            CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, breakage_length, flag_breakage)
+            CALL CALC_BOND_FLAG(nframe, box_l, nmol, pos_cm, rg, breakage_prefactor, flag_breakage)
             !print *,"Calculated flag of breakage." 
 
             ! -- calculate bond-breakage number B_i and the number of the particle whose B_i = k -- !
@@ -294,22 +277,24 @@ program main
 
     contains
         ! -- Calculate the flag whether pair of particles is bonded or not -- !
-        subroutine CALC_BOND_FLAG(nframe, box_l, nmol, pos, threshold, flag)
+        subroutine CALC_BOND_FLAG(nframe, box_l, nmol, pos, rg, prefactor, flag)
             implicit none
             INTEGER(KIND=4), INTENT(IN)                 :: nmol, nframe
             DOUBLE PRECISION, INTENT(IN)                :: box_l
             DOUBLE PRECISION, INTENT(IN)                :: pos(1:, 1:, 0:)
-            DOUBLE PRECISION, INTENT(IN)                :: threshold 
+            DOUBLE PRECISION, INTENT(IN)                :: prefactor
+            DOUBLE PRECISION, INTENT(IN)                :: rg(1:, 0:)
             
             INTEGER(KIND=1), INTENT(OUT)                :: flag(1:, 1:, 0:)
 
             DOUBLE PRECISION                            :: dpos(3)
             DOUBLE PRECISION                            :: distance
-
+            DOUBLE PRECISION                            :: bond_prefactor
 
             flag = 0
             do i = 0, nframe
                 do j = 1, nmol
+                    bond_length = prefactor * rg(j, i)
                     do k = 1, nmol
                         if (j .ne. k) then
                             dpos(:) = pos(:,k,i) - pos(:,j,i)
@@ -319,7 +304,7 @@ program main
                             flag(k,j,i) = 0
                         end if 
                         ! -- if bonded flag_bond = 1, if not flag_bond = 0 -- !
-                        if (distance .le. threshold) then
+                        if (distance .le. bond_length) then
                             flag(k,j,i) = 1
                         else 
                             flag(k,j,i) = 0
