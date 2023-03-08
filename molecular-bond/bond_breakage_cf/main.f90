@@ -154,6 +154,7 @@ program main
     command = "touch BOND_LENGTH"
     CALL system(command)
     !$ omp do default(private) 
+    ! -- this loop for bond length -- !
     do iii = 1, 20
         WRITE(chara1,"(I3.3)") iii
         dir_name = chara1
@@ -197,6 +198,7 @@ program main
 
         command = "touch " // TRIM(ADJUSTL(chara1)) // "/BREAKAGE_LENGTH"
         CALL system(command)
+        ! -- loop for breakage length -- !
         do ii = iii, 20
             WRITE(chara2,"(I3.3)") ii
             dir_name = TRIM(ADJUSTL(chara1)) // "/"  //  TRIM(ADJUSTL(chara2))
