@@ -23,7 +23,7 @@ OBJ = prm_list.o \
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(FC) -qopenmp -o $@ $(OBJ) -L$(HOME)/local/xdrfile-1.1.4-gfortran -lxdrfile
+	$(FC) -qopenmp -o $@ $(OBJ) -L$(HOME)/local/xdrfile-1.1.4-gfortran -lxdrfile -mkl
 
 .f90.o:
 	$(FC) -c $<
