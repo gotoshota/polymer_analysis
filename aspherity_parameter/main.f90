@@ -11,6 +11,7 @@ program main
     implicit none
     DOUBLE PRECISION tmp, tmptmp
     DOUBLE PRECISION ave(2)
+    DOUBLE PRECISION var(2)
     DOUBLE PRECISION mat(3,3)
     double precision t, dummy, tread, tcalc
     integer h, i, j, k, l, m, n
@@ -76,18 +77,31 @@ program main
     enddo
     ave = ave / DBLE(nframe + 1) / DBLE(nmol)
 
+    ! -- calculate variance -- !
+    var = 0.0d0 ! -- represents mean square -- !
+    do i = 0, nframe
+        do j = 1, nmol
+            var(1) = var(1) + A(j,i)*A(j,i)
+            var(2) = var(2) + P(j,i)*P(j,i)
+        end do
+    end do
+    var(1) = var(1) - ave(1)*ave(1)
+    var(2) = var(2) - ave(2)*ave(2)
+
+
     call system_clock(tend)
     tcalc = real(tend - tbegin) / CountPerSec
     
     open(15, file='aspherity.txt', status='replace')
-    write(15,*)'# aspherity parameter'
-    write(15,*)'# A is:'
-    write (15,*)ave(1)
+    write(15,*)'# aspherity'
+    write(15,*)'# average, variance'
+    write (15,*)ave(1), var(1)
     close(15)
 
     open(15, file='prolateness.txt', status='replace')
-    write(15,*)'# P is:'
-    write (15,*)ave(2)
+    write(15,*)'# prolateness'
+    write(15,*)'# average, variance'
+    write (15,*)ave(2), var(2)
     close(15)
 
     open(17, file='log.as_param', status='replace')
