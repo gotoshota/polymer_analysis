@@ -6,8 +6,8 @@ program main
     use calc_inertia_tensor
     
     implicit none
-    INTEGER(KIND=8) i, j
-    DOUBLE PRECISION summation
+    INTEGER(KIND=8) i, j,k
+    DOUBLE PRECISION summation(3)
     
 
     CALL readprm()
@@ -18,13 +18,17 @@ program main
     summation = 0.0d0
     do i = 0, nframe
         do j = 1, nmol
-            summation = summation + SUM(inertia_eigenval(:,j,i))
+            do k = 1, 3
+                summation(k) = summation(k) + inertia_eigenval(k,j,i)
+            enddo
         enddo
     enddo
     print *, "# Rg is"
-    print *, summation/ dble(nmol) / dble(nframe - 1)
+    print *, sum(summation)/ dble(nmol) / dble(nframe + 1)
+    print *, summation(1)/ dble(nmol) / dble(nframe + 1)
+    print *, summation(2)/ dble(nmol) / dble(nframe + 1)
+    print *, summation(3)/ dble(nmol) / dble(nframe + 1)
 
-    do i = 
     
 
 end program
