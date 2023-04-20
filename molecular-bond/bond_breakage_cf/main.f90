@@ -352,7 +352,7 @@ program main
             outfilename = TRIM(ADJUSTL(chara1)) // "/probability_nb_norm.txt"
             OPEN(outfile, file=outfilename, status="replace", form="formatted")
             WRITE(outfile, *) "# N / N_ave, p(N) * N_ave"
-            WRITE(outfile, *) "# N_ave = ", n_av
+            WRITE(outfile, *) "# N_ave = ", n_ave
                 do i = 0, nmol
                     WRITE(outfile, "(F15.7, 1X, F15.7)") DBLE(i)/DBLE(n_ave), pdf(i)*n_ave
                 end do
