@@ -47,7 +47,8 @@ program main
     DOUBLE PRECISION, ALLOCATABLE   :: p_time_of_state(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: ave_time_of_state(:)
     DOUBLE PRECISION, ALLOCATABLE   :: frac_of_num_of_broken_bond(:,:)
-    DOUBLE PRECISION, ALLOCATABLE   :: cf_broken_bond(:)
+    DOUBLE PRECISION, ALLOCATABLE   :: phi_b(:)
+    DOUBLE PRECISION, ALLOCATABLE   :: cf_broken_bond(:) !: pb
     DOUBLE PRECISION, ALLOCATABLE   :: susceptibility(:)
 
     INTEGER(KIND=4), PARAMETER      :: outfile = 17
@@ -149,13 +150,14 @@ program main
     ALLOCATE(num_broken_bond(0:nmol, npoint))
     ALLOCATE(frac_of_num_of_broken_bond(0:nmol, npoint))
     ALLOCATE(cf_broken_bond(npoint))
+    ALLOCATE(phi_b(npoint))
     ALLOCATE(susceptibility(npoint))
 
     command = "touch BOND_LENGTH"
     CALL system(command)
     !$ omp do default(private) 
-    ! -- this loop for bond length -- !
-    do iii = 1, 20
+    ! -- loop for bond length -- !
+    do iii = 10, 10
         WRITE(chara1,"(I3.3)") iii
         dir_name = chara1
         CALL MKDIR(dir_name)
@@ -199,7 +201,7 @@ program main
         command = "touch " // TRIM(ADJUSTL(chara1)) // "/BREAKAGE_LENGTH"
         CALL system(command)
         ! -- loop for breakage length -- !
-        do ii = iii, 20
+        do ii = iii, 12 
             WRITE(chara2,"(I3.3)") ii
             dir_name = TRIM(ADJUSTL(chara1)) // "/"  //  TRIM(ADJUSTL(chara2))
             CALL MKDIR(dir_name)
@@ -248,10 +250,12 @@ program main
             enddo
             !print *, "Output the fraction of broken bond was completed."
             
-            ! -- time correlation function of bond breakage -- !
+            ! -- time correlation function of bond breakage and pb -- !
             cf_broken_bond = 0.0d0
+            phi_b             = 0.0d0
             do i = 1, npoint
                 do j = 1, nmol
+                    phi_b(i)          = phi_b(i) + frac_of_num_of_broken_bond(j,i)
                     cf_broken_bond(i) = cf_broken_bond(i) + j * frac_of_num_of_broken_bond(j,i)
                 enddo
                 cf_broken_bond(i) = cf_broken_bond(i) * 0.50d0 * density
@@ -259,6 +263,14 @@ program main
             !print *, "Calculated the total fraction of broken bond in time lag t"
 
             ! -- output -- !
+            outfilename = TRIM(ADJUSTL(dir_name_header)) // "/phi_b.txt"
+            OPEN (outfile, file=outfilename, status="replace", form="formatted")
+                WRITE(outfile, *) "# time , TCF "
+                do i = 1, npoint
+                    WRITE(outfile, 100) times(i), phi_b(i)
+                enddo
+            CLOSE(outfile)
+
             outfilename = TRIM(ADJUSTL(dir_name_header)) // "/cf_broken_bond.txt"
             OPEN (outfile, file=outfilename, status="replace", form="formatted")
                 WRITE(outfile, *) "# time , TCF "
