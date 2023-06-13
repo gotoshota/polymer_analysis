@@ -64,7 +64,7 @@ Program main
             if (i_rg .eq. 0)then
                 i_rg = 1
             endif
-            i_p_rg(i_rg) = i_p_rg(i_rg) + 1
+            !i_p_rg(i_rg) = i_p_rg(i_rg) + 1
         enddo
     enddo
     close(18)

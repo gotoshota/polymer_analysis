@@ -46,9 +46,10 @@ program main
     DOUBLE PRECISION, ALLOCATABLE   :: p_num_bond(:)
     DOUBLE PRECISION, ALLOCATABLE   :: p_time_of_state(:,:)
     DOUBLE PRECISION, ALLOCATABLE   :: ave_time_of_state(:)
-    DOUBLE PRECISION, ALLOCATABLE   :: frac_of_num_of_broken_bond(:,:)
-    DOUBLE PRECISION, ALLOCATABLE   :: phi_b(:)
+    DOUBLE PRECISION, ALLOCATABLE   :: frac_of_num_of_broken_bond(:,:) !: phi_B(t, k)
+    DOUBLE PRECISION, ALLOCATABLE   :: phi_b(:) ! : fraction of the number of particle which has broken bond
     DOUBLE PRECISION, ALLOCATABLE   :: cf_broken_bond(:) !: pb
+    DOUBLE PRECISION, ALLOCATABLE   :: tcf_broken_bond(:) ! : Fb
     DOUBLE PRECISION, ALLOCATABLE   :: susceptibility(:)
 
     INTEGER(KIND=4), PARAMETER      :: outfile = 17
@@ -150,6 +151,7 @@ program main
     ALLOCATE(num_broken_bond(0:nmol, npoint))
     ALLOCATE(frac_of_num_of_broken_bond(0:nmol, npoint))
     ALLOCATE(cf_broken_bond(npoint))
+    ALLOCATE(tcf_broken_bond(npoint))
     ALLOCATE(phi_b(npoint))
     ALLOCATE(susceptibility(npoint))
 
@@ -157,7 +159,7 @@ program main
     CALL system(command)
     !$ omp do default(private) 
     ! -- loop for bond length -- !
-    do iii = 10, 10
+    do iii = 1, 10
         WRITE(chara1,"(I3.3)") iii
         dir_name = chara1
         CALL MKDIR(dir_name)
@@ -219,8 +221,18 @@ program main
             CALL CALC_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, flag_bond, flag_breakage, broken_bond)
             !print *,"Calculated broken bond." 
 
+            CALL CALC_FRACTION_OF_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, flag_bond, flag_breakage, tcf_broken_bond)
+
+            ! -- output -- !
+            outfilename = TRIM(ADJUSTL(dir_name_header)) // "/fb.txt"
+            open(outfile, file=outfilename, status="replace", form="formatted")
+            WRITE(outfile, *) "# time , Fb (the fraction of remaining bond at time interval t)"
+            do i = 1, npoint
+                write(outfile, *) times(i), tcf_broken_bond(i)
+            enddo
+            CLOSE(outfile)
+
             CALL CALC_NUM_OF_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, broken_bond, num_broken_bond)
-            !print *,"Calculated the number of broken bond." 
 
             ! -- fraction of the number of particle whose bond are broken in time window t -- !
             do i = 1, npoint ! -- lag time (second arg) -- !
@@ -234,7 +246,6 @@ program main
                     summation = summation + frac_of_num_of_broken_bond(j,i)
                 enddo
             enddo
-            !print *, "Calculated the fraction of broken bond in time lag t"
             ! -- output -- !
             dir_name = dir_name_header // "/frac_broken_bond"
             CALL MKDIR(dir_name)
@@ -435,6 +446,54 @@ program main
             enddo
         end subroutine
 
+        ! -- calculate Fb, which is the number of fraction -- !
+        subroutine CALC_FRACTION_OF_BROKEN_BOND(nmol, nframe, npoint, TargetFrame, flag1, flag2, tcf_broken_bond)
+            implicit none
+
+            INTEGER(KIND=4), INTENT(IN)                 :: nmol, nframe, npoint, TargetFrame(0:)
+            INTEGER(KIND=1), INTENT(IN)                 :: flag1(1:, 1:, 0:)
+            INTEGER(KIND=1), INTENT(IN)                 :: flag2(1:, 1:, 0:)
+            DOUBLE PRECISION, INTENT(OUT)               :: tcf_broken_bond(1:)
+
+            ! -- local variable -- !
+            INTEGER(KIND=4)                             :: i, j, k, l
+            INTEGER(KIND=8)                             :: sum_tmp
+            INTEGER(KIND=1)                             :: int_tmp
+            DOUBLE PRECISION                            :: total_num_of_remaining_bond(0:npoint)
+            INTEGER(KIND=1), ALLOCATABLE                :: flag(:,:,:)
+
+            ALLOCATE(flag(nmol, nmol, 0:nframe))
+            total_num_of_remaining_bond = 0
+            flag                        = 0
+            do i = 0, npoint 
+                sum_tmp = 0
+                do j = 0, nframe - TargetFrame(i)
+                    do k = 1, nmol
+                        do l = 1, nmol
+                            int_tmp = flag1(l,k,j)*flag2(l,k,j+TargetFrame(i))
+                            if (flag(l,k,j) .eq. 2) then ! : flag = 2 skip
+                                CYCLE
+                            else if (flag(l,k,j) .eq. 1 .and. int_tmp .eq. 1) then ! : if bonded so far and bonded even this frame
+                                sum_tmp = sum_tmp + 1
+                                flag(l,k,j) = 1
+                            else if (flag(l,k,j) .eq. 1 .and. int_tmp .eq. 0) then ! : if bonded so far and broken this frame
+                                flag(l,k,j) = 2
+                            else if (flag(l,k,j) .eq. 0) then  ! : if non-bonded so far 
+                                sum_tmp = sum_tmp + int_tmp
+                                flag(l,k,j) = int_tmp
+                            end if
+                        enddo
+                    enddo
+                enddo
+                total_num_of_remaining_bond(i) = 0.50d0 * DBLE(sum_tmp) / DBLE(nframe + 1 - TargetFrame(i))
+                    !print *, total_num_of_remaining_bond(i)
+            enddo
+
+            do i = 1, npoint
+                tcf_broken_bond(i) = total_num_of_remaining_bond(i) / total_num_of_remaining_bond(0)
+            enddo
+        end subroutine
+
         ! -- calculate the susceptibility of overall degree of the bond-breakage -- !
         subroutine CALC_SUSCEPTIBILITY(box_l, nmol, nframe, npoint, TargetFrame, broken_bond, cf_broken_bond, susceptibility)
             implicit none   
@@ -442,8 +501,10 @@ program main
             DOUBLE PRECISION, INTENT(IN)                :: cf_broken_bond(1:), box_l
             DOUBLE PRECISION, INTENT(OUT)               :: susceptibility(1:)
             
+            ! -- local variable -- !
             INTEGER(KIND=4)                             :: i, j, k, l
             DOUBLE PRECISION                            :: tmp, density, vol
+            DOUBLE PRECISION                            :: summation
 
             vol = box_l ** 3.0d0
             density = nmol / vol
@@ -451,11 +512,14 @@ program main
             do i = 1, npoint
                 tmp = 2.0d0 * cf_broken_bond(i) / density
                 do j = 0, nframe - TargetFrame(i)
+                    summation = 0.0d0
                     do k = 1, nmol
-                        do l = 1, nmol
-                            susceptibility(i) = susceptibility(i) + (broken_bond(k,j,i) - tmp) * (broken_bond(l,j,i) - tmp)
-                        enddo
+                        !do l = 1, nmol
+                        !    susceptibility(i) = susceptibility(i) + (broken_bond(k,j,i) - tmp) * (broken_bond(l,j,i) - tmp)
+                        !enddo
+                        summation = summation + broken_bond(k,j,i) - tmp
                     enddo
+                    susceptibility(i) = susceptibility(i) + summation*summation
                 enddo
                 susceptibility(i) = susceptibility(i) * 0.250d0 / vol
             enddo
